@@ -37,9 +37,11 @@ public class ParentComponent
             boot = create(BootstrapClient.class, Init.NONE);
             connect(basicBroadcast.getPositive(BestEffortBroadcast.class), boot.getNegative(BestEffortBroadcast.class)
                     , Channel.TWO_WAY);
+            connect(net, basicBroadcast.getNegative(Network.class), Channel.TWO_WAY);
         } else { // start in server mode
             boot = create(BootstrapServer.class, Init.NONE);
         }
+
         connect(timer, boot.getNegative(Timer.class), Channel.TWO_WAY);
         connect(net, boot.getNegative(Network.class), Channel.TWO_WAY);
         // Overlay

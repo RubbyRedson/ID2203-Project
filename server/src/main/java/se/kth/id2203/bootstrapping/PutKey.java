@@ -7,10 +7,10 @@ import se.sics.kompics.KompicsEvent;
  */
 public class PutKey implements KompicsEvent {
 
-    String key;
-    String val;
+    public final String key;
+    public final String val;
 
-    public void putKey(String key, String val){
+    public PutKey(String key, String val) {
         this.key = key;
         this.val = val;
     }

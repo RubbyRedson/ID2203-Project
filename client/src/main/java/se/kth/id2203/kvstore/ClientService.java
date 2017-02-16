@@ -75,9 +75,8 @@ public class ClientService extends ComponentDefinition {
             st.setTimeoutEvent(new ConnectTimeout(st));
             trigger(new Message(self, server, new Connect(st.getTimeoutEvent().getTimeoutId())), net);
 
-            PutKey putKey = new PutKey();
+            PutKey putKey = new PutKey("23hash23", "The value");
             trigger(new Message(self, server, putKey), net);
-            putKey.putKey("23hash23", "The value");
             trigger(st, timer);
         }
     };
