@@ -54,7 +54,6 @@ public class Setup {
         return scen;
     }
 
-
     public static Operation startSlave = new Operation<StartNodeEvent>() {
 
         @Override
@@ -109,8 +108,6 @@ public class Setup {
             };
         }
     };
-
-
 
     public static Operation startMaster = new Operation<StartNodeEvent>() {
 
