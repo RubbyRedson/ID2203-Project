@@ -61,7 +61,7 @@ public class Setup {
                         e.printStackTrace();
                     }
 
-                    selfAdr = new NetAddress(ad, 9090);
+                    selfAdr = new NetAddress(ad, 45678);
                     return selfAdr;
                 }
 
@@ -78,8 +78,9 @@ public class Setup {
                 @Override
                 public Map<String, Object> initConfigUpdate() {
                     HashMap<String, Object> config = new HashMap<>();
-                    config.put("id2203.project.address", selfAdr.getIp().toString() + ":" + getFreePort());
-                    config.put("id2203.project.bootstrap-address", "127.0.0.1:45678");
+                    getNodeAddress();
+                    config.put("id2203.project.address", selfAdr);
+                    //config.put("id2203.project.bootstrap-address", "127.0.0.1:45678");
                     return config;
                 }
 
