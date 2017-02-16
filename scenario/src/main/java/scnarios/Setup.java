@@ -1,12 +1,11 @@
 package scnarios;
 
-import se.kth.id2203.HostComponent;
 import se.kth.id2203.ParentComponent;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.Init;
 import se.sics.kompics.network.Address;
 import se.sics.kompics.simulator.SimulationScenario;
-import se.sics.kompics.simulator.adaptor.Operation1;
+import se.sics.kompics.simulator.adaptor.Operation;
 import se.sics.kompics.simulator.adaptor.distributions.extra.BasicIntSequentialDistribution;
 import se.sics.kompics.simulator.events.system.StartNodeEvent;
 
@@ -23,32 +22,43 @@ import java.util.Map;
  */
 public class Setup {
 
+    public static final int MASTER_PORT = 45678;
+    public static final String MASTER_IP = "127.0.0.1";
+    public static final String SLAVE_IP = "127.0.0.1";
+
     public static SimulationScenario simpleSetup() {
         SimulationScenario scen = new SimulationScenario() {
             {
-                SimulationScenario.StochasticProcess setup = new SimulationScenario.StochasticProcess() {
+                SimulationScenario.StochasticProcess setupMaster = new SimulationScenario.StochasticProcess() {
                     {
+                        //One master
                         eventInterArrivalTime(constant(1000));
-                        raise(1, startSetup, new BasicIntSequentialDistribution(2));
+                        raise(1, startMaster);
                     }
                 };
 
-                setup.start();
-                terminateAfterTerminationOf(2000, setup);
+                SimulationScenario.StochasticProcess setupSlaves = new SimulationScenario.StochasticProcess() {
+                    {
+                        //10 slaves
+                        eventInterArrivalTime(constant(200));
+                        raise(100, startSlave);
+                    }
+                };
 
-                //ponger.start();
-                //pinger.startAfterTerminationOf(1000, ponger);
-                //terminateAfterTerminationOf(10000, pinger);
+                setupMaster.start();
+                setupSlaves.startAfterStartOf(500, setupMaster);
+                terminateAfterTerminationOf(30000, setupSlaves);
             }
         };
 
         return scen;
     }
 
-    public static Operation1 startSetup = new Operation1<StartNodeEvent, Integer>() {
+
+    public static Operation startSlave = new Operation<StartNodeEvent>() {
 
         @Override
-        public StartNodeEvent generate(final Integer self) {
+        public StartNodeEvent generate() {
             return new StartNodeEvent() {
 
                 NetAddress selfAdr;
@@ -57,12 +67,68 @@ public class Setup {
                 public Address getNodeAddress() {
                     InetAddress ad = null;
                     try {
-                       ad = InetAddress.getLocalHost();
+                        ad = InetAddress.getLocalHost();
                     } catch (UnknownHostException e) {
                         e.printStackTrace();
                     }
 
-                    selfAdr = new NetAddress(ad, 45678);
+                    try {
+                        selfAdr = new NetAddress(InetAddress.getByName(SLAVE_IP), getFreePort());
+                    } catch (UnknownHostException e) {
+                        e.printStackTrace();
+                    }
+
+                    return selfAdr;
+                }
+
+                @Override
+                public Class getComponentDefinition() {
+                    return ParentComponent.class;
+                }
+
+                @Override
+                public Init getComponentInit() {
+                    return Init.NONE;
+                }
+
+                @Override
+                public Map<String, Object> initConfigUpdate() {
+                    HashMap<String, Object> config = new HashMap<>();
+                    getNodeAddress();
+
+                    config.put("id2203.project.address", selfAdr);
+                    config.put("id2203.project.bootstrap-address",  new NetAddress(selfAdr.getIp(), MASTER_PORT));
+
+                    return config;
+                }
+
+                @Override
+                public String toString() {
+                    return "StartSlave<" + selfAdr.toString() + ">";
+                }
+            };
+        }
+    };
+
+
+
+    public static Operation startMaster = new Operation<StartNodeEvent>() {
+
+        @Override
+        public StartNodeEvent generate() {
+            return new StartNodeEvent() {
+
+                NetAddress selfAdr;
+
+                @Override
+                public Address getNodeAddress() {
+                    try {
+                        selfAdr = new NetAddress(InetAddress.getByName(MASTER_IP), MASTER_PORT);
+                    } catch (UnknownHostException e) {
+                        e.printStackTrace();
+                    }
+
+                    System.out.println(selfAdr);
                     return selfAdr;
                 }
 
