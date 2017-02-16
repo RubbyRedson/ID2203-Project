@@ -30,7 +30,8 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Future;
 import org.slf4j.LoggerFactory;
-import se.kth.id2203.bootstrapping.AddKey;
+import se.kth.id2203.bootstrapping.PutKey;
+import se.kth.id2203.bootstrapping.PutKeyAck;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.overlay.Connect;
@@ -74,9 +75,9 @@ public class ClientService extends ComponentDefinition {
             st.setTimeoutEvent(new ConnectTimeout(st));
             trigger(new Message(self, server, new Connect(st.getTimeoutEvent().getTimeoutId())), net);
 
-            AddKey addKey = new AddKey();
-            trigger(new Message(self, server, addKey), net);
-            addKey.addKey("My key");
+            PutKey putKey = new PutKey();
+            trigger(new Message(self, server, putKey), net);
+            putKey.putKey("23hash23", "The value");
             trigger(st, timer);
         }
     };
@@ -129,6 +130,13 @@ public class ClientService extends ComponentDefinition {
             }
         }
     };
+
+    protected final ClassMatchedHandler<PutKeyAck, Message> putKeyAckResponse = new ClassMatchedHandler<PutKeyAck, Message>() {
+        @Override
+        public void handle(PutKeyAck putKeyAck, Message message) {
+            System.out.println("mmkkey, so the key:" + putKeyAck.key + " was added and acked");
+        }
+    };
     
     {
         subscribe(startHandler, control);
@@ -136,6 +144,7 @@ public class ClientService extends ComponentDefinition {
         subscribe(connectHandler, net);
         subscribe(opHandler, loopback);
         subscribe(responseHandler, net);
+        subscribe(putKeyAckResponse, net);
     }
     
     Future<OpResponse> op(String key) {

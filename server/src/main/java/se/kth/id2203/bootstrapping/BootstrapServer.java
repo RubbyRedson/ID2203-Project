@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.kth.id2203.bootstrapping.BootstrapServer.State;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.ClassMatchedHandler;
@@ -38,7 +37,6 @@ import se.sics.kompics.Handler;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
-import se.sics.kompics.network.Address;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.timer.CancelPeriodicTimeout;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
@@ -116,12 +114,16 @@ public class BootstrapServer extends ComponentDefinition {
             ready.add(context.getSource());
         }
     };
-    protected final ClassMatchedHandler<AddKey, Message> addKeyHandler = new ClassMatchedHandler<AddKey, Message>() {
+    protected final ClassMatchedHandler<PutKey, Message> addKeyHandler = new ClassMatchedHandler<PutKey, Message>() {
         @Override
-        public void handle(AddKey addKey, Message message) {
-            System.out.println("Did you want me to add the key: " + addKey.key);
+        public void handle(PutKey putKey, Message message) {
+            System.out.println("Did you want me to add the key: " + putKey.key + " with the value: " + putKey.val);
+
+            trigger(new Message(self, message.getSource(), new PutKeyAck(putKey.key)), net);
         }
     };
+
+
 
 
     {
