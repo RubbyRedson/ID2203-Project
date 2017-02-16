@@ -129,6 +129,7 @@ public class BootstrapClient extends ComponentDefinition {
             topology = topologyResponse.topology;
 
             System.out.println("----- Topisie ---");
+            topology.remove(server);
             System.out.println(topology);
             System.out.println("-----------------");
         }

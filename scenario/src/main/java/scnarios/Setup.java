@@ -52,8 +52,8 @@ public class Setup {
 
                 setupMaster.start();
                 setupSlaves.startAfterStartOf(2000, setupMaster);
-                //setupClient.startAfterStartOf(500, setupSlaves);
-                terminateAfterTerminationOf(30000, setupSlaves);
+                setupClient.startAfterStartOf(3000, setupSlaves);
+                terminateAfterTerminationOf(30000, setupClient);
             }
         };
 
