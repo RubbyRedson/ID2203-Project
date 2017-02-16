@@ -7,6 +7,7 @@ import se.kth.id2203.broadcast.perfect_link.PerfectLink;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.*;
+import se.sics.kompics.network.Network;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,7 +19,7 @@ public class BasicBroadcast extends ComponentDefinition {
 
     final static Logger LOG = LoggerFactory.getLogger(BasicBroadcast.class);
     //******* Ports ******
-    protected final Positive<PerfectLink> pLink = requires(PerfectLink.class);
+    protected final Positive<Network> pLink = requires(Network.class);
     protected final Negative<BestEffortBroadcast> beb = provides(BestEffortBroadcast.class);
     //******* Fields ******
     private NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
@@ -29,16 +30,10 @@ public class BasicBroadcast extends ComponentDefinition {
         @Override
         public void handle(Start start) {
             System.out.println("in the \"ctor\" ");
+            topology = config().getValue("id2203.project.topology", Set.class);
         }
     };
-    protected final Handler<BEB_Init> initHandler = new Handler<BEB_Init>() {
-        @Override
-        public void handle(BEB_Init BEBInit) {
-            self = BEBInit.self;
-            topology = BEBInit.topology;
-            LOG.info("Starting Best Effort Broadcast {} with topology {}", self, BEBInit.topology);
-        }
-    };
+
     protected final Handler<BEB_Broadcast> broadcastHandler = new Handler<BEB_Broadcast>() {
         @Override
         public void handle(BEB_Broadcast beb_broadcast) {
