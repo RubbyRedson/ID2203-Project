@@ -24,9 +24,9 @@
 package se.kth.id2203.bootstrapping;
 
 import com.google.common.collect.ImmutableSet;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+
+import java.util.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.kth.id2203.broadcast.beb.BestEffortBroadcast;
@@ -61,6 +61,8 @@ public class BootstrapServer extends ComponentDefinition {
     private final Set<NetAddress> active = new HashSet<>();
     private final Set<NetAddress> ready = new HashSet<>();
     private NodeAssignment initialAssignment = null;
+
+    private List<PutKey> holdbackQueue = new ArrayList<>();
     //******* Handlers ******
     protected final Handler<Start> startHandler = new Handler<Start>() {
         @Override
@@ -114,6 +116,21 @@ public class BootstrapServer extends ComponentDefinition {
             for (NetAddress adr : active){
                 trigger(new Message(self, adr, new TopologyResponse(active, 123)), net);
             }
+
+            if (holdbackQueue.size() > 0 && active.size() > 6) {
+                System.out.println("Empty holdbackqueue " + holdbackQueue);
+                Iterator iterator = holdbackQueue.iterator();
+                List<PutKey> toRemove = new ArrayList<>();
+                while (iterator.hasNext()) {
+                    PutKey msg = (PutKey) iterator.next();
+                    System.out.println("Trigger it!");
+                    trigger(new Message(self, getOneNodeFromPartition() , msg), net);
+                    toRemove.add(msg);
+                }
+                for (PutKey t : toRemove) {
+                    holdbackQueue.remove(t);
+                }
+            }
             
         }
     };
@@ -129,6 +146,8 @@ public class BootstrapServer extends ComponentDefinition {
 
             System.out.println("Did you want me to add the key: " + putKey.key + " with the value: " + putKey.val);
             System.out.println(message.getSource());
+            if (active.size() < 2) holdbackQueue.add(putKey);
+            else trigger(new Message(self, getOneNodeFromPartition() , putKey), net);
             //trigger(new Message(self, getOneNodeFromPartition() , putKey), net);
             //trigger(new Message(self, message.getSource(), new PutKeyAck(putKey.key)), net);
         }
@@ -136,6 +155,7 @@ public class BootstrapServer extends ComponentDefinition {
 
 
     private NetAddress getOneNodeFromPartition(){
+        System.out.println("chose " + (NetAddress) active.toArray()[1]);
         return (NetAddress) active.toArray()[1];
     }
 
