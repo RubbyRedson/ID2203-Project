@@ -9,8 +9,8 @@ import java.util.Set;
  * Created by Nick on 2/16/2017.
  */
 public class TopologyResponse implements KompicsEvent {
-    Set<NetAddress> topology;
-    int topologyId;
+    public final Set<NetAddress> topology;
+    public final int topologyId;
 
     public TopologyResponse(Set<NetAddress> topology, int topologyId) {
         this.topology = topology;

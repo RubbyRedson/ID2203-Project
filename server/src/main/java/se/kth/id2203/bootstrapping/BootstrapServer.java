@@ -110,6 +110,10 @@ public class BootstrapServer extends ComponentDefinition {
         @Override
         public void handle(CheckIn content, Message context) {
             active.add(context.getSource());
+
+            for (NetAddress adr : active){
+                trigger(new Message(self, adr, new TopologyResponse(active, 123)), net);
+            }
         }
     };
     protected final ClassMatchedHandler<Ready, Message> readyHandler = new ClassMatchedHandler<Ready, Message>() {
@@ -121,23 +125,38 @@ public class BootstrapServer extends ComponentDefinition {
     protected final ClassMatchedHandler<PutKey, Message> addKeyHandler = new ClassMatchedHandler<PutKey, Message>() {
         @Override
         public void handle(PutKey putKey, Message message) {
-            System.out.println("Did you want me to add the key: " + putKey.key + " with the value: " + putKey.val);
-            trigger(putKey, beb);
+            //System.out.println("Did you want me to add the key: " + putKey.key + " with the value: " + putKey.val);
+            trigger(new Message(self, (NetAddress) active.toArray()[0], putKey), net);
             //trigger(new Message(self, message.getSource(), new PutKeyAck(putKey.key)), net);
         }
     };
+
+    /*
     protected final ClassMatchedHandler<TopologyQuery, Message> topologyQueryMessageClassMatchedHandler = new ClassMatchedHandler<TopologyQuery, Message>() {
         @Override
         public void handle(TopologyQuery topologyQuery, Message message) {
+
             System.out.println("Received topology query from " + message.getSource());
-            trigger(new Message(self, message.getSource(), new TopologyResponse(active, 123)), net);
+            Set<NetAddress> result = new HashSet<>();
+            for (NetAddress adr : active) {
+                if(adr.getPort() != self.getPort()){
+                    result.add(adr);
+                }
+            }
+
+            System.out.println(".------");
+            System.out.println(result);
+            System.out.println(self);
+            System.out.println("........");
+
+            trigger(new Message(self, message.getSource(), new TopologyResponse(result, 123)), net);
 
         }
     };
-
-
+    */
 
     {
+        //subscribe(topologyQueryMessageClassMatchedHandler, net);
         subscribe(startHandler, control);
         subscribe(timeoutHandler, timer);
         subscribe(assignmentHandler, boot);

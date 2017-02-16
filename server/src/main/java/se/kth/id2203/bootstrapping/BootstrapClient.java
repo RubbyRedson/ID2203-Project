@@ -23,11 +23,11 @@
  */
 package se.kth.id2203.bootstrapping;
 
-import java.util.UUID;
+import java.awt.print.Book;
+import java.util.*;
+
 import org.slf4j.LoggerFactory;
-import se.kth.id2203.broadcast.beb.BEB_Broadcast;
-import se.kth.id2203.broadcast.beb.BEB_Deliver;
-import se.kth.id2203.broadcast.beb.BestEffortBroadcast;
+import se.kth.id2203.broadcast.beb.*;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.ClassMatchedHandler;
@@ -58,9 +58,13 @@ public class BootstrapClient extends ComponentDefinition {
     final Positive<Timer> timer = requires(Timer.class);
     final Positive<Network> net = requires(Network.class);
     final Positive<BestEffortBroadcast> beb = requires(BestEffortBroadcast.class);
+
+    Map<NetAddress, String> acks;
+
     //******* Fields ******
     private final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     private final NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
+    private Set<NetAddress> topology = new HashSet<>();
 
     private State state = State.WAITING;
 
@@ -77,6 +81,7 @@ public class BootstrapClient extends ComponentDefinition {
             spt.setTimeoutEvent(new BSTimeout(spt));
             trigger(spt, timer);
             timeoutId = spt.getTimeoutEvent().getTimeoutId();
+            acks = new HashMap<>();
         }
     };
     protected final Handler<BSTimeout> timeoutHandler = new Handler<BSTimeout>() {
@@ -107,20 +112,65 @@ public class BootstrapClient extends ComponentDefinition {
         }
     };
 
+    /*
     protected final Handler<BEB_Deliver> beb_deliverHandler = new Handler<BEB_Deliver>() {
         @Override
         public void handle(BEB_Deliver beb_deliver) {
-            trigger(new BEB_Broadcast(beb_deliver.payload), beb);
+
+            trigger(new BEB_Broadcast(beb_deliver.payload, topology), beb);
             System.out.println("Saved " + beb_deliver.payload + " at " + self);
+        }
+    };
+    */
+
+    protected final ClassMatchedHandler<TopologyResponse, Message> topologyResponseMessageClassMatchedHandler = new ClassMatchedHandler<TopologyResponse, Message>() {
+        @Override
+        public void handle(TopologyResponse topologyResponse, Message message) {
+            topology = topologyResponse.topology;
+
+            System.out.println("----- Topisie ---");
+            System.out.println(topology);
+            System.out.println("-----------------");
+        }
+    };
+    protected final ClassMatchedHandler<PutKey, Message> putKeyHandler = new ClassMatchedHandler<PutKey, Message>() {
+        @Override
+        public void handle(PutKey putKey, Message message) {
+            System.out.println("put key");
+            if(!acks.containsKey(self)){
+
+                trigger(new BEB_Broadcast(putKey, topology), beb);
+
+                acks.put(self, putKey.key);
+            }
+
+            acks.put(message.getSource(), putKey.key);
+
+            boolean allDone = true;
+            for (NetAddress adr : topology){
+                if(!acks.containsKey(adr)){
+                    allDone = false;
+                    break;
+                }
+            }
+
+            if(allDone){
+                //Deliver
+                System.out.println("deliver: " + self);
+            }
 
         }
     };
+
     @Override
     public void tearDown() {
         trigger(new CancelPeriodicTimeout(timeoutId), timer);
     }
 
     {
+        subscribe(putKeyHandler, net);
+        //subscribe(beb_deliverHandler, beb);
+        subscribe(topologyResponseMessageClassMatchedHandler, net);
         subscribe(startHandler, control);
         subscribe(timeoutHandler, timer);
         subscribe(bootHandler, net);

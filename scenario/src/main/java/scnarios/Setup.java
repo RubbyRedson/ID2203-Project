@@ -38,7 +38,7 @@ public class Setup {
                     {
                         //10 slaves
                         eventInterArrivalTime(constant(200));
-                        raise(1, startSlave);
+                        raise(10, startSlave);
                     }
                 };
 
@@ -51,9 +51,9 @@ public class Setup {
                 };
 
                 setupMaster.start();
-                setupSlaves.startAfterStartOf(500, setupMaster);
-                setupClient.startAfterStartOf(500, setupSlaves);
-                terminateAfterTerminationOf(30000, setupClient);
+                setupSlaves.startAfterStartOf(2000, setupMaster);
+                //setupClient.startAfterStartOf(500, setupSlaves);
+                terminateAfterTerminationOf(30000, setupSlaves);
             }
         };
 

@@ -23,23 +23,13 @@ public class BasicBroadcast extends ComponentDefinition {
     //******* Fields ******
     private NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     private NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
-    private Set<NetAddress> topology = new HashSet<>();
 
     //******* Handlers ******
-    protected final Handler<Start> startHandler = new Handler<Start>() {
-        @Override
-        public void handle(Start start) {
-            System.out.println("in the \"ctor\" ");
-            topology = config().getValue("id2203.project.topology", Set.class);
-            trigger(new Message(self, server, new TopologyQuery()), net);
-        }
-    };
-
     protected final Handler<BEB_Broadcast> broadcastHandler = new Handler<BEB_Broadcast>() {
         @Override
         public void handle(BEB_Broadcast beb_broadcast) {
-            for (NetAddress adr : topology) {
-                trigger(new Message(self, adr, beb_broadcast), net);
+            for (NetAddress adr : beb_broadcast.topology) {
+                trigger(new Message(self, adr, beb_broadcast.payload), net);
             }
         }
     };
@@ -50,18 +40,10 @@ public class BasicBroadcast extends ComponentDefinition {
         }
     };
 
-    protected final ClassMatchedHandler<TopologyResponse, Message> topologyResponseMessageClassMatchedHandler = new ClassMatchedHandler<TopologyResponse, Message>() {
-        @Override
-        public void handle(TopologyResponse topologyResponse, Message message) {
-            topology = topologyResponse.topology;
-        }
-    };
 
 
     {
-        subscribe(startHandler, control);
         subscribe(putKeyHandler, net);
-        subscribe(topologyResponseMessageClassMatchedHandler, net);
         subscribe(broadcastHandler, beb);
     }
 }
