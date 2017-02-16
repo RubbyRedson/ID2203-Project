@@ -38,6 +38,7 @@ import se.sics.kompics.Handler;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
+import se.sics.kompics.network.Address;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.timer.CancelPeriodicTimeout;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
@@ -115,6 +116,13 @@ public class BootstrapServer extends ComponentDefinition {
             ready.add(context.getSource());
         }
     };
+    protected final ClassMatchedHandler<AddKey, Message> addKeyHandler = new ClassMatchedHandler<AddKey, Message>() {
+        @Override
+        public void handle(AddKey addKey, Message message) {
+            System.out.println("Did you want me to add the key: " + addKey.key);
+        }
+    };
+
 
     {
         subscribe(startHandler, control);
@@ -122,6 +130,7 @@ public class BootstrapServer extends ComponentDefinition {
         subscribe(assignmentHandler, boot);
         subscribe(checkinHandler, net);
         subscribe(readyHandler, net);
+        subscribe(addKeyHandler, net);
     }
 
     @Override

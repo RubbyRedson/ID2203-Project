@@ -1,4 +1,5 @@
 import org.apache.commons.cli.*;
+import scnarios.AddKey;
 import scnarios.Setup;
 import se.kth.id2203.HostComponent;
 import se.kth.id2203.networking.NetAddress;
@@ -27,7 +28,11 @@ public class Main {
         long seed = 123;
         SimulationScenario.setSeed(seed);
         SimulationScenario simpleBootScenario = Setup.simpleSetup();
-        simpleBootScenario.simulate(LauncherComp.class);
+
+        SimulationScenario addKeyScenario = AddKey.addKeys();
+        addKeyScenario.simulate(LauncherComp.class);
+
+        //simpleBootScenario.simulate(LauncherComp.class);
 
     }
 }
