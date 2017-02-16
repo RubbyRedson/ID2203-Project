@@ -29,17 +29,14 @@ import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.kth.id2203.broadcast.beb.BasicBroadcast;
 import se.kth.id2203.broadcast.beb.BestEffortBroadcast;
 import se.kth.id2203.broadcast.beb.TopologyQuery;
 import se.kth.id2203.broadcast.beb.TopologyResponse;
+import se.kth.id2203.kvstore.KVService;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
-import se.sics.kompics.ClassMatchedHandler;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Handler;
-import se.sics.kompics.Negative;
-import se.sics.kompics.Positive;
-import se.sics.kompics.Start;
+import se.sics.kompics.*;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.timer.CancelPeriodicTimeout;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
@@ -74,6 +71,7 @@ public class BootstrapServer extends ComponentDefinition {
             trigger(spt, timer);
             timeoutId = spt.getTimeoutEvent().getTimeoutId();
             active.add(self);
+
         }
     };
     protected final Handler<BSTimeout> timeoutHandler = new Handler<BSTimeout>() {

@@ -4,6 +4,8 @@ import com.google.common.base.Optional;
 import se.kth.id2203.bootstrapping.BootstrapClient;
 import se.kth.id2203.bootstrapping.BootstrapServer;
 import se.kth.id2203.bootstrapping.Bootstrapping;
+import se.kth.id2203.broadcast.beb.BasicBroadcast;
+import se.kth.id2203.broadcast.beb.BestEffortBroadcast;
 import se.kth.id2203.kvstore.KVService;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.overlay.Routing;
@@ -26,12 +28,15 @@ public class ParentComponent
     protected final Component overlay = create(VSOverlayManager.class, Init.NONE);
     protected final Component kv = create(KVService.class, Init.NONE);
     protected final Component boot;
+    private Component basicBroadcast = create(BasicBroadcast.class, Init.NONE);
 
     {
 
         Optional<NetAddress> serverO = config().readValue("id2203.project.bootstrap-address", NetAddress.class);
         if (serverO.isPresent()) { // start in client mode
             boot = create(BootstrapClient.class, Init.NONE);
+            connect(basicBroadcast.getPositive(BestEffortBroadcast.class), boot.getNegative(BestEffortBroadcast.class)
+                    , Channel.TWO_WAY);
         } else { // start in server mode
             boot = create(BootstrapServer.class, Init.NONE);
         }

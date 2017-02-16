@@ -28,6 +28,7 @@ public class BasicBroadcast extends ComponentDefinition {
     protected final Handler<BEB_Broadcast> broadcastHandler = new Handler<BEB_Broadcast>() {
         @Override
         public void handle(BEB_Broadcast beb_broadcast) {
+            System.out.println("BEB start in BasicBroadcast");
             for (NetAddress adr : beb_broadcast.topology) {
                 trigger(new Message(self, adr, beb_broadcast.payload), net);
             }

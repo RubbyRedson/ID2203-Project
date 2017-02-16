@@ -137,9 +137,9 @@ public class BootstrapClient extends ComponentDefinition {
     protected final ClassMatchedHandler<PutKey, Message> putKeyHandler = new ClassMatchedHandler<PutKey, Message>() {
         @Override
         public void handle(PutKey putKey, Message message) {
-            System.out.println("put key");
+            System.out.println("put key at " + self.getPort());
             if(!acks.containsKey(self)){
-
+                System.out.println("Start broadcast");
                 trigger(new BEB_Broadcast(putKey, topology), beb);
 
                 acks.put(self, putKey.key);
