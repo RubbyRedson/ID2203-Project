@@ -1,6 +1,7 @@
 package scnarios;
 
 import se.kth.id2203.HostComponent;
+import se.kth.id2203.ParentComponent;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.Init;
 import se.sics.kompics.network.Address;
@@ -67,7 +68,7 @@ public class Setup {
 
                 @Override
                 public Class getComponentDefinition() {
-                    return HostComponent.class;
+                    return ParentComponent.class;
                 }
 
                 @Override
