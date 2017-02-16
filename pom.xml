@@ -16,6 +16,9 @@
         <module>client</module>
         <module>common</module>
         <module>server</module>
+        <module>scenario</module>
+        <module>scenario</module>
+        <module>scenario</module>
     </modules>
 
     <dependencies>
@@ -85,7 +88,6 @@
                     <target>${java.compiler.version}</target>
                     <debug>true</debug>
                     <optimize>true</optimize>
-                    <showDeprecations>true</showDeprecations>
                 </configuration>
             </plugin>
         </plugins>
