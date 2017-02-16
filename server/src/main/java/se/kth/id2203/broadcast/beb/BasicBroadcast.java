@@ -51,7 +51,7 @@ public class BasicBroadcast extends ComponentDefinition {
         }
     };
 
-
-
-
+    {
+        subscribe(plDeliverHandler, pLink);
+    }
 }
