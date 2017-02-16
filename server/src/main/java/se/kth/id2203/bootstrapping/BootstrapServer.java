@@ -29,11 +29,8 @@ import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.kth.id2203.broadcast.beb.BasicBroadcast;
 import se.kth.id2203.broadcast.beb.BestEffortBroadcast;
-import se.kth.id2203.broadcast.beb.TopologyQuery;
 import se.kth.id2203.broadcast.beb.TopologyResponse;
-import se.kth.id2203.kvstore.KVService;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.*;
@@ -115,7 +112,7 @@ public class BootstrapServer extends ComponentDefinition {
                 trigger(new Message(self, adr, new TopologyResponse(active, 123)), net);
             }
 
-            if (holdbackQueue.size() > 0 && active.size() > 6) {
+            if (holdbackQueue.size() > 0 && active.size() > 9) {
                 System.out.println("Empty holdbackqueue " + holdbackQueue);
                 Iterator iterator = holdbackQueue.iterator();
                 List<PutKey> toRemove = new ArrayList<>();
@@ -138,7 +135,7 @@ public class BootstrapServer extends ComponentDefinition {
             ready.add(context.getSource());
         }
     };
-    protected final ClassMatchedHandler<PutKey, Message> addKeyHandler = new ClassMatchedHandler<PutKey, Message>() {
+    protected final ClassMatchedHandler<PutKey, Message> putKeyAckHandler = new ClassMatchedHandler<PutKey, Message>() {
         @Override
         public void handle(PutKey putKey, Message message) {
 
@@ -148,6 +145,15 @@ public class BootstrapServer extends ComponentDefinition {
             else trigger(new Message(self, getOneNodeFromPartition() , putKey), net);
             //trigger(new Message(self, getOneNodeFromPartition() , putKey), net);
             //trigger(new Message(self, message.getSource(), new PutKeyAck(putKey.key)), net);
+        }
+    };
+
+    protected final ClassMatchedHandler<PutKeyAck, Message> addKeyHandler = new ClassMatchedHandler<PutKeyAck, Message>() {
+        @Override
+        public void handle(PutKeyAck putKeyAck, Message message) {
+
+            System.out.println("Ack for client from Master");
+            trigger(new Message(self, putKeyAck.to, putKeyAck), net);
         }
     };
 
@@ -189,6 +195,7 @@ public class BootstrapServer extends ComponentDefinition {
         subscribe(checkinHandler, net);
         subscribe(readyHandler, net);
         subscribe(addKeyHandler, net);
+        subscribe(putKeyAckHandler, net);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package se.kth.id2203.bootstrapping;
 
+import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.KompicsEvent;
 
 /**
@@ -7,8 +8,10 @@ import se.sics.kompics.KompicsEvent;
  */
 public class PutKeyAck implements KompicsEvent{
     public String key;
+    public final NetAddress to;
 
-    public PutKeyAck(String key){
+    public PutKeyAck(String key, NetAddress to){
         this.key = key;
+        this.to = to;
     }
 }

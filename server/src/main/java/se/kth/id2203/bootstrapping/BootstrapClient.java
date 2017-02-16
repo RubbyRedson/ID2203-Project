@@ -158,6 +158,7 @@ public class BootstrapClient extends ComponentDefinition {
             if(allDone){
                 //Deliver
                 System.out.println("deliver: " + self);
+                trigger(new Message(self, server, new PutKeyAck(putKey.key, putKey.client)), net);
             }
 
         }
