@@ -6,10 +6,7 @@ import se.kth.id2203.broadcast.perfect_link.PL_Deliver;
 import se.kth.id2203.broadcast.perfect_link.PerfectLink;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Handler;
-import se.sics.kompics.Negative;
-import se.sics.kompics.Positive;
+import se.sics.kompics.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -28,6 +25,12 @@ public class BasicBroadcast extends ComponentDefinition {
     private Set<NetAddress> topology = new HashSet<>();
 
     //******* Handlers ******
+    protected final Handler<Start> startHandler = new Handler<Start>() {
+        @Override
+        public void handle(Start start) {
+            System.out.println("in the \"ctor\" ");
+        }
+    };
     protected final Handler<BEB_Init> initHandler = new Handler<BEB_Init>() {
         @Override
         public void handle(BEB_Init BEBInit) {
@@ -52,6 +55,8 @@ public class BasicBroadcast extends ComponentDefinition {
     };
 
     {
+        subscribe(startHandler, control);
         subscribe(plDeliverHandler, pLink);
+        subscribe(broadcastHandler, beb);
     }
 }
