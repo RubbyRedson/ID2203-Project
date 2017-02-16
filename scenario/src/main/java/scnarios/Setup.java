@@ -1,6 +1,7 @@
 package scnarios;
 
 import se.kth.id2203.ParentComponent;
+import se.kth.id2203.kvstore.ClientService;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.Init;
 import se.sics.kompics.network.Address;
@@ -37,19 +38,34 @@ public class Setup {
                     {
                         //10 slaves
                         eventInterArrivalTime(constant(200));
-                        raise(100, startSlave);
+                        raise(1, startSlave);
+                    }
+                };
+
+                SimulationScenario.StochasticProcess setupClient = new SimulationScenario.StochasticProcess() {
+                    {
+                        //10 slaves
+                        eventInterArrivalTime(constant(200));
+                        raise(1, startClient);
                     }
                 };
 
                 setupMaster.start();
                 setupSlaves.startAfterStartOf(500, setupMaster);
-                terminateAfterTerminationOf(30000, setupSlaves);
+                setupClient.startAfterStartOf(500, setupSlaves);
+                terminateAfterTerminationOf(30000, setupClient);
             }
         };
 
         return scen;
     }
 
+    public static Operation startClient = new Operation<StartNodeEvent>() {
+        @Override
+        public StartNodeEvent generate() {
+            return new StartNode(ClientService.class);
+        }
+    };
 
     public static Operation startSlave = new Operation<StartNodeEvent>() {
         @Override
