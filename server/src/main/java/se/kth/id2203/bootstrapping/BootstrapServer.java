@@ -29,6 +29,9 @@ import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.kth.id2203.broadcast.beb.BestEffortBroadcast;
+import se.kth.id2203.broadcast.beb.TopologyQuery;
+import se.kth.id2203.broadcast.beb.TopologyResponse;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.ClassMatchedHandler;
@@ -49,6 +52,7 @@ public class BootstrapServer extends ComponentDefinition {
     protected final Negative<Bootstrapping> boot = provides(Bootstrapping.class);
     protected final Positive<Network> net = requires(Network.class);
     protected final Positive<Timer> timer = requires(Timer.class);
+    protected final Positive<BestEffortBroadcast> beb = requires(BestEffortBroadcast.class);
     //******* Fields ******
     final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     final int bootThreshold = config().getValue("id2203.project.bootThreshold", Integer.class);
@@ -118,11 +122,18 @@ public class BootstrapServer extends ComponentDefinition {
         @Override
         public void handle(PutKey putKey, Message message) {
             System.out.println("Did you want me to add the key: " + putKey.key + " with the value: " + putKey.val);
-
-            trigger(new Message(self, message.getSource(), new PutKeyAck(putKey.key)), net);
+            trigger(putKey, beb);
+            //trigger(new Message(self, message.getSource(), new PutKeyAck(putKey.key)), net);
         }
     };
+    protected final ClassMatchedHandler<TopologyQuery, Message> topologyQueryMessageClassMatchedHandler = new ClassMatchedHandler<TopologyQuery, Message>() {
+        @Override
+        public void handle(TopologyQuery topologyQuery, Message message) {
+            System.out.println("Received topology query from " + message.getSource());
+            trigger(new Message(self, message.getSource(), new TopologyResponse(active, 123)), net);
 
+        }
+    };
 
 
 

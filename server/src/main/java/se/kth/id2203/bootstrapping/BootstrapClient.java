@@ -25,6 +25,9 @@ package se.kth.id2203.bootstrapping;
 
 import java.util.UUID;
 import org.slf4j.LoggerFactory;
+import se.kth.id2203.broadcast.beb.BEB_Broadcast;
+import se.kth.id2203.broadcast.beb.BEB_Deliver;
+import se.kth.id2203.broadcast.beb.BestEffortBroadcast;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.ClassMatchedHandler;
@@ -54,6 +57,7 @@ public class BootstrapClient extends ComponentDefinition {
     final Negative<Bootstrapping> bootstrap = provides(Bootstrapping.class);
     final Positive<Timer> timer = requires(Timer.class);
     final Positive<Network> net = requires(Network.class);
+    final Positive<BestEffortBroadcast> beb = requires(BestEffortBroadcast.class);
     //******* Fields ******
     private final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     private final NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
@@ -103,6 +107,14 @@ public class BootstrapClient extends ComponentDefinition {
         }
     };
 
+    protected final Handler<BEB_Deliver> beb_deliverHandler = new Handler<BEB_Deliver>() {
+        @Override
+        public void handle(BEB_Deliver beb_deliver) {
+            trigger(new BEB_Broadcast(beb_deliver.payload), beb);
+            System.out.println("Saved " + beb_deliver.payload + " at " + self);
+
+        }
+    };
     @Override
     public void tearDown() {
         trigger(new CancelPeriodicTimeout(timeoutId), timer);

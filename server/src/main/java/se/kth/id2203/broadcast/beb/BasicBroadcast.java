@@ -2,8 +2,7 @@ package se.kth.id2203.broadcast.beb;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.kth.id2203.broadcast.perfect_link.PL_Deliver;
-import se.kth.id2203.broadcast.perfect_link.PerfectLink;
+import se.kth.id2203.bootstrapping.PutKey;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.*;
@@ -19,10 +18,11 @@ public class BasicBroadcast extends ComponentDefinition {
 
     final static Logger LOG = LoggerFactory.getLogger(BasicBroadcast.class);
     //******* Ports ******
-    protected final Positive<Network> pLink = requires(Network.class);
+    protected final Positive<Network> net = requires(Network.class);
     protected final Negative<BestEffortBroadcast> beb = provides(BestEffortBroadcast.class);
     //******* Fields ******
     private NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
+    private NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
     private Set<NetAddress> topology = new HashSet<>();
 
     //******* Handlers ******
@@ -31,6 +31,7 @@ public class BasicBroadcast extends ComponentDefinition {
         public void handle(Start start) {
             System.out.println("in the \"ctor\" ");
             topology = config().getValue("id2203.project.topology", Set.class);
+            trigger(new Message(self, server, new TopologyQuery()), net);
         }
     };
 
@@ -38,20 +39,29 @@ public class BasicBroadcast extends ComponentDefinition {
         @Override
         public void handle(BEB_Broadcast beb_broadcast) {
             for (NetAddress adr : topology) {
-                trigger(new Message(self, adr, beb_broadcast), pLink);
+                trigger(new Message(self, adr, beb_broadcast), net);
             }
         }
     };
-    protected final Handler<PL_Deliver> plDeliverHandler = new Handler<PL_Deliver>() {
+    protected final ClassMatchedHandler<PutKey, Message> putKeyHandler = new ClassMatchedHandler<PutKey, Message>() {
         @Override
-        public void handle(PL_Deliver pl_deliver) {
-            trigger(new BEB_Deliver(self, pl_deliver.payload), beb);
+        public void handle(PutKey putKey, Message message) {
+            trigger(new BEB_Deliver(self, putKey), beb);
         }
     };
 
+    protected final ClassMatchedHandler<TopologyResponse, Message> topologyResponseMessageClassMatchedHandler = new ClassMatchedHandler<TopologyResponse, Message>() {
+        @Override
+        public void handle(TopologyResponse topologyResponse, Message message) {
+            topology = topologyResponse.topology;
+        }
+    };
+
+
     {
         subscribe(startHandler, control);
-        subscribe(plDeliverHandler, pLink);
+        subscribe(putKeyHandler, net);
+        subscribe(topologyResponseMessageClassMatchedHandler, net);
         subscribe(broadcastHandler, beb);
     }
 }
