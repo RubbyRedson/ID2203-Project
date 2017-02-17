@@ -141,10 +141,11 @@ public class BootstrapServer extends ComponentDefinition {
 
             Set<NetAddress> p = partitions.get(partitionKey);
 
-
             for (NetAddress adr : p){
                 trigger(new Message(self, adr, new TopologyResponse(p, partitionKey)), net);
             }
+
+            trigger(new Message(self, self, new TopologyResponse(active, -1)), net);
 
             if (holdbackQueue.size() > 0 && p.size() > 4) {
                 System.out.println("Empty holdbackqueue " + holdbackQueue);

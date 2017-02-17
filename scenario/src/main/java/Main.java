@@ -14,15 +14,15 @@ public class Main {
         SimulationScenario.setSeed(seed);
 
         //Boot without failures
-        SimulationScenario simpleBootScenario = Setup.simpleSetup();
-        simpleBootScenario.simulate(LauncherComp.class);
+        //SimulationScenario simpleBootScenario = Setup.simpleSetup();
+        //simpleBootScenario.simulate(LauncherComp.class);
 
         //Boot with failures
         //SimulationScenario bootWithFailure = CrashNodes.simpleSetup();
         //bootWithFailure.simulate(LauncherComp.class);
 
-        //SimulationScenario crashAndRestart = CrashAndRestart.simpleSetup();
-        //crashAndRestart.simulate(LauncherComp.class);
+        SimulationScenario crashAndRestart = CrashAndRestart.simpleSetup();
+        crashAndRestart.simulate(LauncherComp.class);
 
     }
 }
