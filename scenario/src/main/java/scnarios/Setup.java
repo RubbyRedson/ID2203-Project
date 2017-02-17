@@ -63,6 +63,7 @@ public class Setup {
     public static Operation startClient = new Operation<StartNodeEvent>() {
         @Override
         public StartNodeEvent generate() {
+            System.out.println("---- startClient ----");
             return new StartNode(ClientService.class);
         }
     };
@@ -70,6 +71,7 @@ public class Setup {
     public static Operation startSlave = new Operation<StartNodeEvent>() {
         @Override
         public StartNodeEvent generate() {
+            System.out.println("---- startSlave ----");
             return new StartNode(ParentComponent.class);
         }
     };
@@ -78,6 +80,7 @@ public class Setup {
 
         @Override
         public StartNodeEvent generate() {
+            System.out.println("---- startMaster ----");
             return new StartNode(ParentComponent.class, "127.0.0.1", StartNode.MASTER_DEFAULT_PORT, -1);
         }
     };

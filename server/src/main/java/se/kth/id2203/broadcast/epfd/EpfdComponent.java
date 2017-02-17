@@ -44,6 +44,7 @@ public class EpfdComponent extends ComponentDefinition {
         @Override
         public void handle(Start e) {
             System.out.println("Start triggered at " + self);
+
             ScheduleTimeout spt = new ScheduleTimeout(delay);
             spt.setTimeoutEvent(new Timeout(spt));
             trigger(spt, timer);
