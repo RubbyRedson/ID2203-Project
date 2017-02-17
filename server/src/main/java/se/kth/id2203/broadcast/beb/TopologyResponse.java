@@ -10,10 +10,10 @@ import java.util.Set;
  */
 public class TopologyResponse implements KompicsEvent {
     public final Set<NetAddress> topology;
-    public final int topologyId;
+    public final int partitionId;
 
-    public TopologyResponse(Set<NetAddress> topology, int topologyId) {
+    public TopologyResponse(Set<NetAddress> topology, int partitionId) {
         this.topology = topology;
-        this.topologyId = topologyId;
+        this.partitionId = partitionId;
     }
 }

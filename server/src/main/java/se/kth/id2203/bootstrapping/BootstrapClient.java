@@ -65,6 +65,8 @@ public class BootstrapClient extends ComponentDefinition {
     private final NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
     private Set<NetAddress> topology = new HashSet<>();
 
+    private int partitionId = -1;
+
     private State state = State.WAITING;
 
     private UUID timeoutId;
@@ -116,7 +118,7 @@ public class BootstrapClient extends ComponentDefinition {
         public void handle(BEB_Deliver beb_deliver) {
 
 //            trigger(new BEB_Broadcast(beb_deliver.payload, topology), beb);
-            System.out.println("Saved " + beb_deliver.payload + " at " + self);
+            System.out.println("Saved " + beb_deliver.payload + " at " + self + " in partition: " + partitionId);
         }
     };
 
@@ -125,8 +127,10 @@ public class BootstrapClient extends ComponentDefinition {
         @Override
         public void handle(TopologyResponse topologyResponse, Message message) {
             topology = topologyResponse.topology;
+            partitionId = topologyResponse.partitionId;
 
-            System.out.println("----- Topisie ---");
+
+            System.out.println("----- Topisie (partition: " + partitionId + ") ---");
             topology.remove(server);
             System.out.println(topology);
             System.out.println("-----------------");
@@ -135,7 +139,7 @@ public class BootstrapClient extends ComponentDefinition {
     protected final ClassMatchedHandler<PutKey, Message> putKeyHandler = new ClassMatchedHandler<PutKey, Message>() {
         @Override
         public void handle(PutKey putKey, Message message) {
-            System.out.println("put key at " + self.getPort());
+            System.out.println("put key at " + self.getPort() );
             trigger(new BEB_Broadcast(putKey, topology), beb);
         }
     };
