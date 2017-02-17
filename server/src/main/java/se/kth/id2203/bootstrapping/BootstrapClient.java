@@ -112,32 +112,36 @@ public class BootstrapClient extends ComponentDefinition {
         }
     };
 
-    /*
+
     protected final Handler<BEB_Deliver> beb_deliverHandler = new Handler<BEB_Deliver>() {
         @Override
         public void handle(BEB_Deliver beb_deliver) {
 
-            trigger(new BEB_Broadcast(beb_deliver.payload, topology), beb);
+            //trigger(new BEB_Broadcast(beb_deliver.payload, topology), beb);
             System.out.println("Saved " + beb_deliver.payload + " at " + self);
         }
     };
-    */
+
 
     protected final ClassMatchedHandler<TopologyResponse, Message> topologyResponseMessageClassMatchedHandler = new ClassMatchedHandler<TopologyResponse, Message>() {
         @Override
         public void handle(TopologyResponse topologyResponse, Message message) {
             topology = topologyResponse.topology;
 
-            System.out.println("----- Topisie ---");
-            topology.remove(server);
-            System.out.println(topology);
-            System.out.println("-----------------");
+            //System.out.println("----- Topisie ---");
+            //topology.remove(server);
+            //System.out.println(topology);
+            //System.out.println("-----------------");
         }
     };
     protected final ClassMatchedHandler<PutKey, Message> putKeyHandler = new ClassMatchedHandler<PutKey, Message>() {
         @Override
         public void handle(PutKey putKey, Message message) {
             System.out.println("put key at " + self.getPort());
+            putKey.setTopology(topology);
+            trigger(new BEB_Broadcast(putKey, topology), beb);
+
+            /*
             if(!acks.containsKey(self)){
                 System.out.println("Start broadcast");
                 trigger(new BEB_Broadcast(putKey, topology), beb);
@@ -160,6 +164,7 @@ public class BootstrapClient extends ComponentDefinition {
                 System.out.println("deliver: " + self);
                 trigger(new Message(self, server, new PutKeyAck(putKey.key, putKey.client)), net);
             }
+            */
 
         }
     };

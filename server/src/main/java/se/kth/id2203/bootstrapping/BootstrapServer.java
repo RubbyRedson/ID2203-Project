@@ -102,6 +102,19 @@ public class BootstrapServer extends ComponentDefinition {
             ready.add(self);
         }
     };
+
+    private Set<NetAddress> copyWithoutSelf(Set<NetAddress> topology) {
+
+        Set<NetAddress> result = new HashSet<>();
+        for (NetAddress adr : topology) {
+            if(!adr.equals(self)){
+                result.add(adr); 
+            }
+        }
+
+        return result;
+    }
+
     protected final ClassMatchedHandler<CheckIn, Message> checkinHandler = new ClassMatchedHandler<CheckIn, Message>() {
 
         @Override
@@ -109,7 +122,7 @@ public class BootstrapServer extends ComponentDefinition {
             active.add(context.getSource());
 
             for (NetAddress adr : active){
-                trigger(new Message(self, adr, new TopologyResponse(active, 123)), net);
+                trigger(new Message(self, adr, new TopologyResponse(copyWithoutSelf(active), 123)), net);
             }
 
             if (holdbackQueue.size() > 0 && active.size() > 9) {
@@ -141,8 +154,13 @@ public class BootstrapServer extends ComponentDefinition {
 
             System.out.println("Did you want me to add the key: " + putKey.key + " with the value: " + putKey.val);
             System.out.println(message.getSource());
-            if (active.size() < 2) holdbackQueue.add(putKey);
-            else trigger(new Message(self, getOneNodeFromPartition() , putKey), net);
+
+            if (active.size() < 2) {
+                holdbackQueue.add(putKey);
+            }
+            else {
+                trigger(new Message(self, getOneNodeFromPartition() , putKey), net);
+            }
             //trigger(new Message(self, getOneNodeFromPartition() , putKey), net);
             //trigger(new Message(self, message.getSource(), new PutKeyAck(putKey.key)), net);
         }
