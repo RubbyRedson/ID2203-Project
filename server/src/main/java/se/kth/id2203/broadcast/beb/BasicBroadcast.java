@@ -2,17 +2,14 @@ package se.kth.id2203.broadcast.beb;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.kth.id2203.bootstrapping.PutKey;
 import se.kth.id2203.broadcast.perfect_link.PL_Deliver;
 import se.kth.id2203.broadcast.perfect_link.PL_Send;
 import se.kth.id2203.broadcast.perfect_link.PerfectLink;
-import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
-import se.sics.kompics.*;
-import se.sics.kompics.network.Network;
-
-import java.util.HashSet;
-import java.util.Set;
+import se.sics.kompics.ComponentDefinition;
+import se.sics.kompics.Handler;
+import se.sics.kompics.Negative;
+import se.sics.kompics.Positive;
 
 /**
  * Created by Nick on 2/16/2017.
@@ -34,8 +31,6 @@ public class BasicBroadcast extends ComponentDefinition {
             System.out.println("BEB start in BasicBroadcast");
             for (NetAddress adr : beb_broadcast.topology) {
                 System.out.println("BEB trigger to " + adr);
-//                PutKey putKey = (PutKey) beb_broadcast.payload;
-//                trigger(new Message(self, adr, putKey), net);
                 trigger(new PL_Send(self, adr, beb_broadcast.payload), pLink);
             }
         }
@@ -48,12 +43,6 @@ public class BasicBroadcast extends ComponentDefinition {
             trigger(new BEB_Deliver(self, pl_deliver.payload), beb);
         }
     };
-//    protected final ClassMatchedHandler<PutKey, Message> putKeyHandler = new ClassMatchedHandler<PutKey, Message>() {
-//        @Override
-//        public void handle(PutKey putKey, Message message) {
-//            trigger(new BEB_Deliver(self, putKey), beb);
-//        }
-//    };
 
 
 
