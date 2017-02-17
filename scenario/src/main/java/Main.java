@@ -18,11 +18,11 @@ public class Main {
         //simpleBootScenario.simulate(LauncherComp.class);
 
         //Boot with failures
-        //SimulationScenario bootWithFailure = CrashNodes.simpleSetup();
-        //bootWithFailure.simulate(LauncherComp.class);
+        SimulationScenario bootWithFailure = CrashNodes.simpleSetup();
+        bootWithFailure.simulate(LauncherComp.class);
 
-        SimulationScenario crashAndRestart = CrashAndRestart.simpleSetup();
-        crashAndRestart.simulate(LauncherComp.class);
+        //SimulationScenario crashAndRestart = CrashAndRestart.simpleSetup();
+        //crashAndRestart.simulate(LauncherComp.class);
 
     }
 }

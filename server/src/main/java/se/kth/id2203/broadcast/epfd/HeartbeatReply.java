@@ -11,4 +11,11 @@ public class HeartbeatReply implements KompicsEvent {
     public HeartbeatReply(int seq) {
         this.seq = seq;
     }
+
+    @Override
+    public String toString() {
+        return "HeartbeatReply{" +
+                "seq=" + seq +
+                '}';
+    }
 }

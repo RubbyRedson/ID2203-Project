@@ -10,6 +10,7 @@ public class Suspect implements KompicsEvent {
     public final NetAddress p;
 
     public Suspect(NetAddress p) {
+        System.out.println("Suspecte event created for " + p);
         this.p = p;
     }
 }

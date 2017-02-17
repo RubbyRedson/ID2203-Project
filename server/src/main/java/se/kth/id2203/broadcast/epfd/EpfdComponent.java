@@ -2,6 +2,8 @@ package se.kth.id2203.broadcast.epfd;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.kth.id2203.broadcast.beb.BEB_Broadcast;
+import se.kth.id2203.broadcast.beb.BEB_Deliver;
 import se.kth.id2203.broadcast.beb.TopologyResponse;
 import se.kth.id2203.broadcast.perfect_link.PL_Deliver;
 import se.kth.id2203.broadcast.perfect_link.PL_Send;
@@ -29,8 +31,8 @@ public class EpfdComponent extends ComponentDefinition {
     //******* Fields ******
     private NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     private NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
-    private static int DELAY = 1000;
-    private int delay = 1000;
+    private static int DELAY = 200;
+    private int delay = 200;
     private Set<NetAddress> topology = new HashSet<>();
 
     private Set<NetAddress> alive = new HashSet<>();
@@ -43,17 +45,16 @@ public class EpfdComponent extends ComponentDefinition {
     protected final Handler<Start> startHandler = new Handler<Start>() {
         @Override
         public void handle(Start e) {
-            System.out.println("Start triggered at " + self);
-
-            ScheduleTimeout spt = new ScheduleTimeout(delay);
-            spt.setTimeoutEvent(new Timeout(spt));
-            trigger(spt, timer);
+            if (self.getPort() == 45678) {
+                ScheduleTimeout spt = new ScheduleTimeout(delay);
+                spt.setTimeoutEvent(new Timeout(spt));
+                trigger(spt, timer);
+            }
         }
     };
     protected final Handler<Timeout> timeoutHandler = new Handler<Timeout>() {
         @Override
         public void handle(Timeout e) {
-            System.out.println("Timer triggered at " + self);
             if (updateTopology) {
                 topology = newTopology;
                 alive = copySet(topology);
@@ -64,11 +65,20 @@ public class EpfdComponent extends ComponentDefinition {
             if (hasIntersection(alive, suspected)) {
                 delay = delay + DELAY;
             }
-            seqnum += 1;
+            seqnum = seqnum + 1;
+            System.out.println("---------- Alive --------------");
+            System.out.println(alive);
+            System.out.println("-------------------------------");
+            System.out.println("---------- Suspected --------------");
+            System.out.println(suspected);
+            System.out.println("-------------------------------");
             for (NetAddress p : topology) {
                 if (!alive.contains(p) && !suspected.contains(p)) {
+                    System.out.println(p + " is now Suspected!");
+                    suspected.add(p);
                     trigger(new Suspect(p), epfd);
                 } else if (alive.contains(p) && suspected.contains(p)) {
+                    suspected.remove(p);
                     trigger(new Restore(p), epfd);
                 }
                 trigger(new PL_Send(self, p, new HeartbeatRequest(seqnum)), pLink);
@@ -80,18 +90,17 @@ public class EpfdComponent extends ComponentDefinition {
             trigger(spt, timer);
         }
     };
-
     protected final ClassMatchedHandler<HeartbeatRequest, PL_Deliver> plDeliverRequestHandler = new ClassMatchedHandler<HeartbeatRequest, PL_Deliver>() {
         @Override
         public void handle(HeartbeatRequest heartbeatRequest, PL_Deliver pl_deliver) {
-            System.out.println("HeartbeatRequest received at " + self);
-            trigger(new PL_Send(self, pl_deliver.src, new HeartbeatReply(seqnum)), pLink);
+            //System.out.println("HeartbeatRequest received at " + self);
+            trigger(new PL_Send(self, pl_deliver.src, new HeartbeatReply(heartbeatRequest.seq)), pLink);
         }
     };
     protected final ClassMatchedHandler<HeartbeatReply, PL_Deliver> plDeliverResponseHandler = new ClassMatchedHandler<HeartbeatReply, PL_Deliver>() {
         @Override
         public void handle(HeartbeatReply heartbeatReply, PL_Deliver pl_deliver) {
-            System.out.println("HeartbeatReply received at " + self);
+            //System.out.println("HeartbeatReply received at " + self + " \n" + pl_deliver.src + "\n" + heartbeatReply.toString());
             if (seqnum == heartbeatReply.seq || suspected.contains(pl_deliver.src)) {
                 alive.add(pl_deliver.src);
             }

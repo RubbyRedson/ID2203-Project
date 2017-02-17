@@ -28,6 +28,7 @@ import java.util.*;
 
 import org.slf4j.LoggerFactory;
 import se.kth.id2203.broadcast.beb.*;
+import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.ClassMatchedHandler;
@@ -58,7 +59,7 @@ public class BootstrapClient extends ComponentDefinition {
     final Positive<Timer> timer = requires(Timer.class);
     final Positive<Network> net = requires(Network.class);
     final Positive<BestEffortBroadcast> beb = requires(BestEffortBroadcast.class);
-
+    protected final Positive<EventuallyPerfectFailureDetector> epfd = requires(EventuallyPerfectFailureDetector.class);
     //******* Fields ******
     private final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     private final NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);

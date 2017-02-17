@@ -6,10 +6,7 @@ import se.kth.id2203.broadcast.perfect_link.PL_Deliver;
 import se.kth.id2203.broadcast.perfect_link.PL_Send;
 import se.kth.id2203.broadcast.perfect_link.PerfectLink;
 import se.kth.id2203.networking.NetAddress;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Handler;
-import se.sics.kompics.Negative;
-import se.sics.kompics.Positive;
+import se.sics.kompics.*;
 
 /**
  * Created by Nick on 2/16/2017.
@@ -31,16 +28,16 @@ public class BasicBroadcast extends ComponentDefinition {
             System.out.println("BEB start in BasicBroadcast");
             for (NetAddress adr : beb_broadcast.topology) {
                 System.out.println("BEB trigger to " + adr);
-                trigger(new PL_Send(self, adr, beb_broadcast.payload), pLink);
+                trigger(new PL_Send(self, adr, beb_broadcast), pLink);
             }
         }
     };
 
-    protected final Handler<PL_Deliver> plDeliverHandler = new Handler<PL_Deliver>() {
+    protected final ClassMatchedHandler<BEB_Broadcast, PL_Deliver> plDeliverHandler = new ClassMatchedHandler<BEB_Broadcast, PL_Deliver>() {
         @Override
-        public void handle(PL_Deliver pl_deliver) {
+        public void handle(BEB_Broadcast beb_broadcast, PL_Deliver pl_deliver) {
             System.out.println("PL Deliver received at " + self);
-            trigger(new BEB_Deliver(self, pl_deliver.payload), beb);
+            trigger(new BEB_Deliver(self, ((BEB_Broadcast)pl_deliver.payload).payload), beb);
         }
     };
 

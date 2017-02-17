@@ -50,7 +50,7 @@ public class CrashNodes {
                 setupMaster.start();
                 setupSlaves.startAfterStartOf(2000, setupMaster);
                 crashSomeNode.startAfterStartOf(30000, setupSlaves);
-                terminateAfterTerminationOf(10000, crashSomeNode);
+                terminateAfterTerminationOf(15000, crashSomeNode);
             }
         };
     }

@@ -1,6 +1,5 @@
 package se.kth.id2203.broadcast.epfd;
 
-import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.ScheduleTimeout;
 
 /**

@@ -1,6 +1,5 @@
 package se.kth.id2203.broadcast.epfd;
 
-import se.kth.id2203.broadcast.beb.BEB_Deliver;
 import se.sics.kompics.PortType;
 
 /**

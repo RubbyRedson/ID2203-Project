@@ -34,7 +34,7 @@ public class ParentComponent
     protected final Component boot;
     private Component basicBroadcast = create(BasicBroadcast.class, Init.NONE);
     private Component pLink = create(PerfectLinkComponent.class, Init.NONE);
-    private Component epfd;
+    private Component epfd = create(EpfdComponent.class, Init.NONE);;
 
     {
 
@@ -45,13 +45,7 @@ public class ParentComponent
                     , Channel.TWO_WAY);
         } else { // start in server mode
             boot = create(BootstrapServer.class, Init.NONE);
-            epfd = create(EpfdComponent.class, Init.NONE);
-            connect(epfd.getPositive(EventuallyPerfectFailureDetector.class),
-                    boot.getNegative(EventuallyPerfectFailureDetector.class), Channel.TWO_WAY);
 
-            // EPFD
-            connect(net, epfd.getNegative(Network.class), Channel.TWO_WAY);
-            connect(pLink.getPositive(PerfectLink.class), epfd.getNegative(PerfectLink.class), Channel.TWO_WAY);
         }
 
         connect(timer, boot.getNegative(Timer.class), Channel.TWO_WAY);
@@ -65,6 +59,13 @@ public class ParentComponent
         // Perfect Link
         connect(pLink.getPositive(PerfectLink.class), basicBroadcast.getNegative(PerfectLink.class), Channel.TWO_WAY);
         connect(net, pLink.getNegative(Network.class), Channel.TWO_WAY);
+
+        // EPFD
+        connect(epfd.getPositive(EventuallyPerfectFailureDetector.class),
+                boot.getNegative(EventuallyPerfectFailureDetector.class), Channel.TWO_WAY);
+        connect(net, epfd.getNegative(Network.class), Channel.TWO_WAY);
+        connect(pLink.getPositive(PerfectLink.class), epfd.getNegative(PerfectLink.class), Channel.TWO_WAY);
+        connect(timer, epfd.getNegative(Timer.class), Channel.TWO_WAY);
 
     }
 }
