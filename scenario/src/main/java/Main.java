@@ -1,3 +1,4 @@
+import scnarios.CrashNodes;
 import scnarios.Setup;
 import se.sics.kompics.simulator.SimulationScenario;
 import se.sics.kompics.simulator.run.LauncherComp;
@@ -10,9 +11,13 @@ public class Main {
 
         long seed = 123;
         SimulationScenario.setSeed(seed);
-        SimulationScenario simpleBootScenario = Setup.simpleSetup();
 
-        simpleBootScenario.simulate(LauncherComp.class);
+        //Boot without failures
+        //SimulationScenario simpleBootScenario = Setup.simpleSetup();
+        //simpleBootScenario.simulate(LauncherComp.class);
 
+        //Boot with failures
+        SimulationScenario bootWithFailure = CrashNodes.simpleSetup();
+        bootWithFailure.simulate(LauncherComp.class);
     }
 }
