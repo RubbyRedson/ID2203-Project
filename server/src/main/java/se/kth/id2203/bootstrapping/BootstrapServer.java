@@ -31,6 +31,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.kth.id2203.broadcast.beb.BestEffortBroadcast;
 import se.kth.id2203.broadcast.beb.TopologyResponse;
+import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
+import se.kth.id2203.broadcast.epfd.Restore;
+import se.kth.id2203.broadcast.epfd.Suspect;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.*;
@@ -47,6 +50,7 @@ public class BootstrapServer extends ComponentDefinition {
     protected final Positive<Network> net = requires(Network.class);
     protected final Positive<Timer> timer = requires(Timer.class);
     protected final Positive<BestEffortBroadcast> beb = requires(BestEffortBroadcast.class);
+    protected final Positive<EventuallyPerfectFailureDetector> epfd = requires(EventuallyPerfectFailureDetector.class);
     //******* Fields ******
     final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     final int bootThreshold = config().getValue("id2203.project.bootThreshold", Integer.class);
@@ -163,6 +167,20 @@ public class BootstrapServer extends ComponentDefinition {
         return (NetAddress) active.toArray()[1];
     }
 
+
+    protected final Handler<Suspect> suspectHandler = new Handler<Suspect>() {
+        @Override
+        public void handle(Suspect e) {
+            System.out.println("SUSPECTED " + e.p);
+        }
+    };
+
+    protected final Handler<Restore> restoreHandler = new Handler<Restore>() {
+        @Override
+        public void handle(Restore e) {
+            System.out.println("RESTORED " + e.p);
+        }
+    };
     /*
     protected final ClassMatchedHandler<TopologyQuery, Message> topologyQueryMessageClassMatchedHandler = new ClassMatchedHandler<TopologyQuery, Message>() {
         @Override
@@ -196,6 +214,8 @@ public class BootstrapServer extends ComponentDefinition {
         subscribe(readyHandler, net);
         subscribe(addKeyHandler, net);
         subscribe(putKeyAckHandler, net);
+        subscribe(suspectHandler, epfd);
+        subscribe(restoreHandler, epfd);
     }
 
     @Override

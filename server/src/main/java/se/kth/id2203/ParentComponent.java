@@ -6,6 +6,8 @@ import se.kth.id2203.bootstrapping.BootstrapServer;
 import se.kth.id2203.bootstrapping.Bootstrapping;
 import se.kth.id2203.broadcast.beb.BasicBroadcast;
 import se.kth.id2203.broadcast.beb.BestEffortBroadcast;
+import se.kth.id2203.broadcast.epfd.EpfdComponent;
+import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
 import se.kth.id2203.broadcast.perfect_link.PerfectLink;
 import se.kth.id2203.broadcast.perfect_link.PerfectLinkComponent;
 import se.kth.id2203.kvstore.KVService;
@@ -32,6 +34,7 @@ public class ParentComponent
     protected final Component boot;
     private Component basicBroadcast = create(BasicBroadcast.class, Init.NONE);
     private Component pLink = create(PerfectLinkComponent.class, Init.NONE);
+    private Component epfd;
 
     {
 
@@ -42,6 +45,13 @@ public class ParentComponent
                     , Channel.TWO_WAY);
         } else { // start in server mode
             boot = create(BootstrapServer.class, Init.NONE);
+            epfd = create(EpfdComponent.class, Init.NONE);
+            connect(epfd.getPositive(EventuallyPerfectFailureDetector.class),
+                    boot.getNegative(EventuallyPerfectFailureDetector.class), Channel.TWO_WAY);
+
+            // EPFD
+            connect(net, epfd.getNegative(Network.class), Channel.TWO_WAY);
+            connect(pLink.getPositive(PerfectLink.class), epfd.getNegative(PerfectLink.class), Channel.TWO_WAY);
         }
 
         connect(timer, boot.getNegative(Timer.class), Channel.TWO_WAY);
@@ -55,5 +65,6 @@ public class ParentComponent
         // Perfect Link
         connect(pLink.getPositive(PerfectLink.class), basicBroadcast.getNegative(PerfectLink.class), Channel.TWO_WAY);
         connect(net, pLink.getNegative(Network.class), Channel.TWO_WAY);
+
     }
 }
