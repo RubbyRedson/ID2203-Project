@@ -29,12 +29,12 @@ public class ParentComponent
     protected final Positive<Network> net = requires(Network.class);
     protected final Positive<Timer> timer = requires(Timer.class);
     //******* Children ******
-    protected final Component overlay = create(VSOverlayManager.class, Init.NONE);
-    protected final Component kv = create(KVService.class, Init.NONE);
+//    protected final Component overlay = create(VSOverlayManager.class, Init.NONE);
+//    protected final Component kv = create(KVService.class, Init.NONE);
     protected final Component boot;
     private Component basicBroadcast = create(BasicBroadcast.class, Init.NONE);
     private Component pLink = create(PerfectLinkComponent.class, Init.NONE);
-    private Component epfd = create(EpfdComponent.class, Init.NONE);;
+    private Component epfd = create(EpfdComponent.class, Init.NONE);
 
     {
 
@@ -51,11 +51,11 @@ public class ParentComponent
         connect(timer, boot.getNegative(Timer.class), Channel.TWO_WAY);
         connect(net, boot.getNegative(Network.class), Channel.TWO_WAY);
         // Overlay
-        connect(boot.getPositive(Bootstrapping.class), overlay.getNegative(Bootstrapping.class), Channel.TWO_WAY);
-        connect(net, overlay.getNegative(Network.class), Channel.TWO_WAY);
+//        connect(boot.getPositive(Bootstrapping.class), overlay.getNegative(Bootstrapping.class), Channel.TWO_WAY);
+//        connect(net, overlay.getNegative(Network.class), Channel.TWO_WAY);
         // KV
-        connect(overlay.getPositive(Routing.class), kv.getNegative(Routing.class), Channel.TWO_WAY);
-        connect(net, kv.getNegative(Network.class), Channel.TWO_WAY);
+//        connect(overlay.getPositive(Routing.class), kv.getNegative(Routing.class), Channel.TWO_WAY);
+//        connect(net, kv.getNegative(Network.class), Channel.TWO_WAY);
         // Perfect Link
         connect(pLink.getPositive(PerfectLink.class), basicBroadcast.getNegative(PerfectLink.class), Channel.TWO_WAY);
         connect(net, pLink.getNegative(Network.class), Channel.TWO_WAY);
