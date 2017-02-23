@@ -74,6 +74,5 @@ public class ParentComponent
         connect(paxos.getPositive(MultiPaxos.class),
                 boot.getNegative(MultiPaxos.class), Channel.TWO_WAY);
         connect(net, paxos.getNegative(Network.class), Channel.TWO_WAY);
-        connect(timer, paxos.getNegative(Timer.class), Channel.TWO_WAY);
     }
 }

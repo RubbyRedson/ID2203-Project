@@ -24,7 +24,6 @@ import java.util.Set;
 public class MultiPaxosComponent extends ComponentDefinition {
     final static Logger LOG = LoggerFactory.getLogger(MultiPaxosComponent.class);
     //******* Ports ******
-    protected final Positive<Timer> timer = requires(Timer.class);
     protected final Positive<PerfectLink> fpl = requires(PerfectLink.class);
     protected final Positive<Network> net = requires(Network.class);
     protected final Negative<MultiPaxos> asc = provides(MultiPaxos.class);
@@ -58,21 +57,11 @@ public class MultiPaxosComponent extends ComponentDefinition {
         public void handle(Propose propose) {
             System.out.println("Multipaxos at " + self + " got " + propose);
             trigger(new Decide("someval"), asc);
-//            ScheduleTimeout spt = new ScheduleTimeout(200);
-//            spt.setTimeoutEvent(new Timeout(spt));
-//            trigger(spt, timer);
-        }
-    };
-    protected final Handler<Timeout> timeoutHandler = new Handler<Timeout>() {
-        @Override
-        public void handle(Timeout e) {
-            System.out.println("Fire decide");
-            trigger(new Decide("someval"), asc);
         }
     };
 
+
     {
-        subscribe(timeoutHandler, timer);
         subscribe(topologyResponseMessageClassMatchedHandler, net);
         subscribe(proposeHandler, asc);
     }
