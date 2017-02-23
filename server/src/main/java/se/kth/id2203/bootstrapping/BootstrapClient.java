@@ -33,6 +33,7 @@ import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.paxos.Abort;
 import se.kth.id2203.paxos.Decide;
+import se.kth.id2203.paxos.FinalDecide;
 import se.kth.id2203.paxos.MultiPaxos;
 import se.sics.kompics.ClassMatchedHandler;
 import se.sics.kompics.ComponentDefinition;
@@ -148,9 +149,9 @@ public class BootstrapClient extends ComponentDefinition {
         }
     };
 
-    protected final Handler<Decide> decideHandler = new Handler<Decide>() {
+    protected final Handler<FinalDecide> decideHandler = new Handler<FinalDecide>() {
         @Override
-        public void handle(Decide e) {
+        public void handle(FinalDecide e) {
             System.out.println("DECIDE " + e + " received at " + self);
         }
     };

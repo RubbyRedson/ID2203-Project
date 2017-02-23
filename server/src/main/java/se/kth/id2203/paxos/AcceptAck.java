@@ -5,22 +5,24 @@ import se.sics.kompics.KompicsEvent;
 import java.io.Serializable;
 
 /**
- * Created by Nick on 2/23/2017.
+ * Created by victoraxelsson on 2017-02-23.
  */
-public class Decide implements KompicsEvent, Serializable {
-    public final int pts, pl, t;
+public class AcceptAck implements KompicsEvent, Serializable {
 
-    public Decide(int pts, int pl, int t) {
+    public final int pts, l, t;
+
+
+    public AcceptAck(int pts, int l, int t) {
         this.pts = pts;
-        this.pl = pl;
+        this.l = l;
         this.t = t;
     }
 
     @Override
     public String toString() {
-        return "Decide{" +
+        return "AcceptAck{" +
                 "pts=" + pts +
-                ", pl=" + pl +
+                ", l=" + l +
                 ", t=" + t +
                 '}';
     }

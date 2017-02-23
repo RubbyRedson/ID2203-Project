@@ -34,12 +34,10 @@ import se.kth.id2203.broadcast.beb.TopologyResponse;
 import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
 import se.kth.id2203.broadcast.epfd.Restore;
 import se.kth.id2203.broadcast.epfd.Suspect;
+import se.kth.id2203.kvstore.Operation;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
-import se.kth.id2203.paxos.Abort;
-import se.kth.id2203.paxos.Decide;
-import se.kth.id2203.paxos.MultiPaxos;
-import se.kth.id2203.paxos.Propose;
+import se.kth.id2203.paxos.*;
 import se.sics.kompics.*;
 import se.sics.kompics.network.Address;
 import se.sics.kompics.network.Network;
@@ -159,7 +157,7 @@ public class BootstrapServer extends ComponentDefinition {
                 while (iterator.hasNext()) {
                     PutKey msg = (PutKey) iterator.next();
                     System.out.println("Trigger it!");
-                    trigger(new Propose("Wubba lubba dub dub"), paxos);
+                    trigger(new Propose(new Operation("Wubba lubba dub dub")), paxos);
                     //trigger(new Message(self, getOneNodeFromPartition(msg) , msg), net);
                     toRemove.add(msg);
                 }
@@ -229,9 +227,9 @@ public class BootstrapServer extends ComponentDefinition {
             System.out.println("RESTORED " + e.p);
         }
     };
-    protected final Handler<Decide> decideHandler = new Handler<Decide>() {
+    protected final Handler<FinalDecide> decideHandler = new Handler<FinalDecide>() {
         @Override
-        public void handle(Decide e) {
+        public void handle(FinalDecide e) {
             System.out.println("DECIDE " + e + " received at " + self);
         }
     };
