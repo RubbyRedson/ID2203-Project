@@ -181,7 +181,7 @@ public class BootstrapServer extends ComponentDefinition {
                 holdbackQueue.add(putKey);
             }
             else {
-                trigger(new Message(self, getOneNodeFromPartition() , putKey), net);
+                trigger(new Message(self, getOneNodeFromPartition(putKey) , putKey), net);
             }
             //trigger(new Message(self, getOneNodeFromPartition() , putKey), net);
             //trigger(new Message(self, message.getSource(), new PutKeyAck(putKey.key)), net);
