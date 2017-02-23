@@ -17,4 +17,13 @@ public class PutKey implements KompicsEvent {
         this.val = val;
         this.client = client;
     }
+
+    @Override
+    public String toString() {
+        return "PutKey{" +
+                "key='" + key + '\'' +
+                ", val='" + val + '\'' +
+                ", client=" + client +
+                '}';
+    }
 }

@@ -37,6 +37,7 @@ import se.kth.id2203.broadcast.epfd.Suspect;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.*;
+import se.sics.kompics.network.Address;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.timer.CancelPeriodicTimeout;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
@@ -52,12 +53,14 @@ public class BootstrapServer extends ComponentDefinition {
     protected final Positive<BestEffortBroadcast> beb = requires(BestEffortBroadcast.class);
     protected final Positive<EventuallyPerfectFailureDetector> epfd = requires(EventuallyPerfectFailureDetector.class);
     //******* Fields ******
+    final static int PARTITION_COUNT = 2;
     final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     final int bootThreshold = config().getValue("id2203.project.bootThreshold", Integer.class);
     private State state = State.COLLECTING;
     private UUID timeoutId;
     private final Set<NetAddress> active = new HashSet<>();
     private final Set<NetAddress> ready = new HashSet<>();
+    private final Map<Integer, Set<NetAddress>> partitions = new HashMap<>();
     private NodeAssignment initialAssignment = null;
 
     private List<PutKey> holdbackQueue = new ArrayList<>();
@@ -106,15 +109,43 @@ public class BootstrapServer extends ComponentDefinition {
             ready.add(self);
         }
     };
+
+    private int getPartitionKey(NetAddress adr){
+        String str = adr.getIp().toString() + ":" + adr.getPort();
+        return str.hashCode() % PARTITION_COUNT ;
+    }
+
+    private int getPartitionKeyOnMessage(PutKey msg){
+        return msg.key.hashCode() % PARTITION_COUNT;
+    }
+
+    private void addToPartition(int partitionKey, NetAddress adr){
+
+        if(!partitions.containsKey(partitionKey)){
+            partitions.put(partitionKey, new HashSet<NetAddress>());
+        }
+
+        Set<NetAddress> newPart = partitions.get(partitionKey);
+        newPart.add(adr);
+        partitions.put(partitionKey, newPart);
+    }
+
     protected final ClassMatchedHandler<CheckIn, Message> checkinHandler = new ClassMatchedHandler<CheckIn, Message>() {
 
         @Override
         public void handle(CheckIn content, Message context) {
             active.add(context.getSource());
 
-            for (NetAddress adr : active){
-                trigger(new Message(self, adr, new TopologyResponse(active, 123)), net);
+            int partitionKey = getPartitionKey(context.getSource());
+            addToPartition(partitionKey, context.getSource());
+
+            Set<NetAddress> p = partitions.get(partitionKey);
+
+            for (NetAddress adr : p){
+                trigger(new Message(self, adr, new TopologyResponse(p, partitionKey)), net);
             }
+
+            trigger(new Message(self, self, new TopologyResponse(active, -1)), net);
 
             if (holdbackQueue.size() > 0 && active.size() > 7) {
                 System.out.println("Empty holdbackqueue " + holdbackQueue);
@@ -123,7 +154,7 @@ public class BootstrapServer extends ComponentDefinition {
                 while (iterator.hasNext()) {
                     PutKey msg = (PutKey) iterator.next();
                     System.out.println("Trigger it!");
-                    trigger(new Message(self, getOneNodeFromPartition() , msg), net);
+                    trigger(new Message(self, getOneNodeFromPartition(msg) , msg), net);
                     toRemove.add(msg);
                 }
                 for (PutKey t : toRemove) {
@@ -166,10 +197,16 @@ public class BootstrapServer extends ComponentDefinition {
         }
     };
 
+    private NetAddress getOneNodeFromPartition(PutKey msg){
 
-    private NetAddress getOneNodeFromPartition(){
-        System.out.println("chose " + (NetAddress) active.toArray()[1]);
-        return (NetAddress) active.toArray()[1];
+        int key = getPartitionKeyOnMessage(msg);
+        Set<NetAddress> p = partitions.get(key);
+
+        if(p.size() > 0){
+            return (NetAddress) p.toArray()[1];
+        }else{
+            return null;
+        }
     }
 
 

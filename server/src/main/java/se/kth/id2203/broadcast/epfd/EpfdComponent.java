@@ -66,12 +66,14 @@ public class EpfdComponent extends ComponentDefinition {
                 delay = delay + DELAY;
             }
             seqnum = seqnum + 1;
+
             System.out.println("---------- Alive --------------");
             System.out.println(alive);
             System.out.println("-------------------------------");
             System.out.println("---------- Suspected --------------");
             System.out.println(suspected);
             System.out.println("-------------------------------");
+
             for (NetAddress p : topology) {
                 if (!alive.contains(p) && !suspected.contains(p)) {
                     System.out.println(p + " is now Suspected!");
@@ -79,6 +81,7 @@ public class EpfdComponent extends ComponentDefinition {
                     trigger(new Suspect(p), epfd);
                 } else if (alive.contains(p) && suspected.contains(p)) {
                     suspected.remove(p);
+                    System.out.println(p + " is now restored!");
                     trigger(new Restore(p), epfd);
                 }
                 trigger(new PL_Send(self, p, new HeartbeatRequest(seqnum)), pLink);
@@ -112,9 +115,11 @@ public class EpfdComponent extends ComponentDefinition {
             newTopology = topologyResponse.topology;
             updateTopology = true;
 
+            /*
             System.out.println("----- Topology received at EPFD ---");
             System.out.println(newTopology);
             System.out.println("-----------------");
+            */
         }
     };
     private boolean hasIntersection(Set a1, Set a2) {
