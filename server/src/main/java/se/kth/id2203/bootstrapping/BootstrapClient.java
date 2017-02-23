@@ -153,6 +153,7 @@ public class BootstrapClient extends ComponentDefinition {
         @Override
         public void handle(FinalDecide e) {
             System.out.println("DECIDE " + e + " received at " + self);
+
         }
     };
 
