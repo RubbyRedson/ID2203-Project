@@ -197,7 +197,6 @@ public class BootstrapServer extends ComponentDefinition {
             trigger(new Message(self, opClientMapping.get(opResponse.id), opResponse), net);
             opClientMapping.remove(opResponse.id);
         }
-
     }
 
     protected final ClassMatchedHandler<PutOperation, Message> operationMessageClassMatchedHandler = new ClassMatchedHandler<PutOperation, Message>() {

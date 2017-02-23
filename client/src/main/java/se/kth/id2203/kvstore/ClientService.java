@@ -110,26 +110,29 @@ public class ClientService extends ComponentDefinition {
         }
     };
 
+    private void handleOperationResponse(OpResponse opResponse) {
+        LOG.debug("Got OpResponse: {}", opResponse);
+        SettableFuture<OpResponse> sf = pending.remove(opResponse.id);
+        if (sf != null) {
+            sf.set(opResponse);
+        } else {
+            LOG.warn("ID {} was not pending! Ignoring response.", opResponse.id);
+        }
+
+    }
 
 
-    protected final ClassMatchedHandler<OpResponse, Message> responseHandler = new ClassMatchedHandler<OpResponse, Message>() {
-        
+    protected final ClassMatchedHandler<PutResponse, Message> putResponseMessageClassMatchedHandler = new ClassMatchedHandler<PutResponse, Message>() {
         @Override
-        public void handle(OpResponse content, Message context) {
-            LOG.debug("Got OpResponse: {}", content);
-            SettableFuture<OpResponse> sf = pending.remove(content.id);
-            if (sf != null) {
-                sf.set(content);
-            } else {
-                LOG.warn("ID {} was not pending! Ignoring response.", content.id);
-            }
+        public void handle(PutResponse content, Message context) {
+            handleOperationResponse(content);
         }
     };
 
-    protected final ClassMatchedHandler<OpResponse, Message> putKeyAckResponse = new ClassMatchedHandler<OpResponse, Message>() {
+    protected final ClassMatchedHandler<GetResponse, Message> getResponseMessageClassMatchedHandler = new ClassMatchedHandler<GetResponse, Message>() {
         @Override
-        public void handle(OpResponse opResponse, Message message) {
-            System.out.println("Received opResponse " + opResponse);
+        public void handle(GetResponse content, Message context) {
+            handleOperationResponse(content);
         }
     };
     
@@ -138,8 +141,8 @@ public class ClientService extends ComponentDefinition {
         subscribe(timeoutHandler, timer);
         subscribe(connectHandler, net);
         subscribe(opHandler, loopback);
-        subscribe(responseHandler, net);
-        subscribe(putKeyAckResponse, net);
+        subscribe(putResponseMessageClassMatchedHandler, net);
+        subscribe(getResponseMessageClassMatchedHandler, net);
     }
     
     Future<OpResponse> op(String key) {
