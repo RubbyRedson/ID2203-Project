@@ -55,7 +55,6 @@ public class MultiPaxosComponent extends ComponentDefinition {
         av = new ArrayList<>();
         al = 0;
 
-
         //Proposer
         pts = 0;
         pv = new ArrayList<>();
@@ -219,9 +218,10 @@ public class MultiPaxosComponent extends ComponentDefinition {
 
             int acceptedCount = 0;
 
-            for(NetAddress p : topology){
-
-                if(accepted.get(p) >= acceptAck.l){
+            //for(NetAddress p : topology){
+            for (Integer val : accepted.values()) {
+                if (val >= acceptAck.l) {
+            //  if(accepted.get(p) >= acceptAck.l){
                     acceptedCount ++;
                 }
             }
@@ -252,7 +252,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
     protected final Handler<Start> startHander = new Handler<Start>() {
         @Override
         public void handle(Start start) {
-            System.out.println("PAXOS, init");
+            System.out.println("PAXOS, init" + self);
             init();
         }
     };
@@ -260,7 +260,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
     protected final ClassMatchedHandler<Decide, PL_Deliver> decideHandler = new ClassMatchedHandler<Decide, PL_Deliver>() {
         @Override
         public void handle(Decide decide, PL_Deliver pl_deliver) {
-            System.out.println("PAXOS, decideHandler");
+            System.out.println("PAXOS, decideHandler SEFL: "  + self + ", SENDER: " + pl_deliver.src);
             decide(decide);
         }
     };
@@ -268,7 +268,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
     protected final ClassMatchedHandler<AcceptAck, PL_Deliver> acceptAck = new ClassMatchedHandler<AcceptAck, PL_Deliver>() {
         @Override
         public void handle(AcceptAck acceptAck, PL_Deliver pl_deliver) {
-            System.out.println("PAXOS, acceptAck");
+            System.out.println("PAXOS, acceptAck  SEFL: "  + self + ", SENDER: " + pl_deliver.src);
 
 
             acceptAck(acceptAck, pl_deliver.src);
@@ -279,7 +279,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
     protected final ClassMatchedHandler<Accept, PL_Deliver> acceptHander = new ClassMatchedHandler<Accept, PL_Deliver>() {
         @Override
         public void handle(Accept accept, PL_Deliver pl_deliver) {
-            System.out.println("PAXOS, acceptHander");
+            System.out.println("PAXOS, acceptHander  SEFL: "  + self + ", SENDER: " + pl_deliver.src);
             accept(accept, pl_deliver.src);
         }
     };
@@ -287,7 +287,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
     protected final ClassMatchedHandler<PrepareAck, PL_Deliver> prepareACkHandler = new ClassMatchedHandler<PrepareAck, PL_Deliver>() {
         @Override
         public void handle(PrepareAck prepareAck, PL_Deliver pl_deliver) {
-            System.out.println("PAXOS, prepareACkHandler");
+            System.out.println("PAXOS, prepareACkHandler  SEFL: "  + self + ", SENDER: " + pl_deliver.src);
             prepareAck(prepareAck, pl_deliver.src);
         }
     };
@@ -295,7 +295,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
     protected final ClassMatchedHandler<Nack, PL_Deliver> nackHandler = new ClassMatchedHandler<Nack, PL_Deliver>() {
         @Override
         public void handle(Nack nack, PL_Deliver pl_deliver) {
-            System.out.println("PAXOS, nackHandler");
+            System.out.println("PAXOS, nackHandler  SEFL: "  + self + ", SENDER: " + pl_deliver.src);
             nack(nack);
         }
     };
@@ -303,7 +303,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
     protected final ClassMatchedHandler<Prepare, PL_Deliver> prepareHandler = new ClassMatchedHandler<Prepare, PL_Deliver>() {
         @Override
         public void handle(Prepare prepare, PL_Deliver pl_deliver) {
-            System.out.println("PAXOS, prepareHandler");
+            System.out.println("PAXOS, prepareHandler  SEFL: "  + self + ", SENDER: " + pl_deliver.src);
             prepare(prepare, pl_deliver.src);
         }
     };
