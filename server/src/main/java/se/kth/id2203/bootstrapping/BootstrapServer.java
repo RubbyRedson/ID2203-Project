@@ -36,6 +36,10 @@ import se.kth.id2203.broadcast.epfd.Restore;
 import se.kth.id2203.broadcast.epfd.Suspect;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
+import se.kth.id2203.paxos.Abort;
+import se.kth.id2203.paxos.Decide;
+import se.kth.id2203.paxos.MultiPaxos;
+import se.kth.id2203.paxos.Propose;
 import se.sics.kompics.*;
 import se.sics.kompics.network.Address;
 import se.sics.kompics.network.Network;
@@ -52,6 +56,7 @@ public class BootstrapServer extends ComponentDefinition {
     protected final Positive<Timer> timer = requires(Timer.class);
     protected final Positive<BestEffortBroadcast> beb = requires(BestEffortBroadcast.class);
     protected final Positive<EventuallyPerfectFailureDetector> epfd = requires(EventuallyPerfectFailureDetector.class);
+    protected final Positive<MultiPaxos> paxos = requires(MultiPaxos.class);
     //******* Fields ******
     final static int PARTITION_COUNT = 2;
     final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
@@ -154,7 +159,8 @@ public class BootstrapServer extends ComponentDefinition {
                 while (iterator.hasNext()) {
                     PutKey msg = (PutKey) iterator.next();
                     System.out.println("Trigger it!");
-                    trigger(new Message(self, getOneNodeFromPartition(msg) , msg), net);
+                    trigger(new Propose("Wubba lubba dub dub"), paxos);
+                    //trigger(new Message(self, getOneNodeFromPartition(msg) , msg), net);
                     toRemove.add(msg);
                 }
                 for (PutKey t : toRemove) {
@@ -223,6 +229,19 @@ public class BootstrapServer extends ComponentDefinition {
             System.out.println("RESTORED " + e.p);
         }
     };
+    protected final Handler<Decide> decideHandler = new Handler<Decide>() {
+        @Override
+        public void handle(Decide e) {
+            System.out.println("DECIDE " + e + " received at " + self);
+        }
+    };
+
+    protected final Handler<Abort> abortHandler = new Handler<Abort>() {
+        @Override
+        public void handle(Abort e) {
+            System.out.println("ABORT " + e+ " received at " + self);
+        }
+    };
     /*
     protected final ClassMatchedHandler<TopologyQuery, Message> topologyQueryMessageClassMatchedHandler = new ClassMatchedHandler<TopologyQuery, Message>() {
         @Override
@@ -258,6 +277,8 @@ public class BootstrapServer extends ComponentDefinition {
         subscribe(putKeyAckHandler, net);
         subscribe(suspectHandler, epfd);
         subscribe(restoreHandler, epfd);
+        subscribe(decideHandler, paxos);
+        subscribe(abortHandler, paxos);
     }
 
     @Override

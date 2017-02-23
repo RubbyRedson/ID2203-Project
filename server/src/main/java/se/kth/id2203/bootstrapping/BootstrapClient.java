@@ -31,6 +31,9 @@ import se.kth.id2203.broadcast.beb.*;
 import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
+import se.kth.id2203.paxos.Abort;
+import se.kth.id2203.paxos.Decide;
+import se.kth.id2203.paxos.MultiPaxos;
 import se.sics.kompics.ClassMatchedHandler;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
@@ -60,6 +63,7 @@ public class BootstrapClient extends ComponentDefinition {
     final Positive<Network> net = requires(Network.class);
     final Positive<BestEffortBroadcast> beb = requires(BestEffortBroadcast.class);
     protected final Positive<EventuallyPerfectFailureDetector> epfd = requires(EventuallyPerfectFailureDetector.class);
+    protected final Positive<MultiPaxos> paxos = requires(MultiPaxos.class);
     //******* Fields ******
     private final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     private final NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
@@ -144,6 +148,20 @@ public class BootstrapClient extends ComponentDefinition {
         }
     };
 
+    protected final Handler<Decide> decideHandler = new Handler<Decide>() {
+        @Override
+        public void handle(Decide e) {
+            System.out.println("DECIDE " + e + " received at " + self);
+        }
+    };
+
+    protected final Handler<Abort> abortHandler = new Handler<Abort>() {
+        @Override
+        public void handle(Abort e) {
+            System.out.println("ABORT " + e+ " received at " + self);
+        }
+    };
+
     @Override
     public void tearDown() {
         trigger(new CancelPeriodicTimeout(timeoutId), timer);
@@ -156,5 +174,7 @@ public class BootstrapClient extends ComponentDefinition {
         subscribe(startHandler, control);
         subscribe(timeoutHandler, timer);
         subscribe(bootHandler, net);
+        subscribe(decideHandler, paxos);
+        subscribe(abortHandler, paxos);
     }
 }
