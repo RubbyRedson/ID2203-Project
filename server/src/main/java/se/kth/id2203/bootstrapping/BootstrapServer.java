@@ -34,8 +34,7 @@ import se.kth.id2203.broadcast.beb.TopologyResponse;
 import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
 import se.kth.id2203.broadcast.epfd.Restore;
 import se.kth.id2203.broadcast.epfd.Suspect;
-import se.kth.id2203.kvstore.Operation;
-import se.kth.id2203.kvstore.PutOperation;
+import se.kth.id2203.kvstore.*;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.paxos.*;
@@ -67,7 +66,10 @@ public class BootstrapServer extends ComponentDefinition {
     private final Map<Integer, Set<NetAddress>> partitions = new HashMap<>();
     private NodeAssignment initialAssignment = null;
 
-    private List<PutKey> holdbackQueue = new ArrayList<>();
+    private List<Operation> holdbackQueue = new ArrayList<>();
+
+    private Map<UUID, NetAddress> opClientMapping = new HashMap<>();
+
     //******* Handlers ******
     protected final Handler<Start> startHandler = new Handler<Start>() {
         @Override
@@ -119,7 +121,7 @@ public class BootstrapServer extends ComponentDefinition {
         return str.hashCode() % PARTITION_COUNT ;
     }
 
-    private int getPartitionKeyOnMessage(PutKey msg){
+    private int getPartitionKeyOnMessage(Operation msg){
         return msg.key.hashCode() % PARTITION_COUNT;
     }
 
@@ -154,15 +156,15 @@ public class BootstrapServer extends ComponentDefinition {
             if (holdbackQueue.size() > 0 && active.size() > 7) {
                 System.out.println("Empty holdbackqueue " + holdbackQueue);
                 Iterator iterator = holdbackQueue.iterator();
-                List<PutKey> toRemove = new ArrayList<>();
+                List<Operation> toRemove = new ArrayList<>();
                 while (iterator.hasNext()) {
-                    PutKey msg = (PutKey) iterator.next();
+                    Operation msg = (Operation) iterator.next();
                     System.out.println("Trigger it!");
-                    trigger(new Propose(new PutOperation("32hash32", "my value")), paxos);
+                    trigger(new Propose(msg), paxos);
                     //trigger(new Message(self, getOneNodeFromPartition(msg) , msg), net);
                     toRemove.add(msg);
                 }
-                for (PutKey t : toRemove) {
+                for (Operation t : toRemove) {
                     holdbackQueue.remove(t);
                 }
             }
@@ -175,34 +177,57 @@ public class BootstrapServer extends ComponentDefinition {
             ready.add(context.getSource());
         }
     };
-    protected final ClassMatchedHandler<PutKey, Message> putKeyAckHandler = new ClassMatchedHandler<PutKey, Message>() {
-        @Override
-        public void handle(PutKey putKey, Message message) {
 
-            System.out.println("Did you want me to add the key: " + putKey.key + " with the value: " + putKey.val);
-            System.out.println(message.getSource());
-            if (active.size() < 7) {
-                System.out.println("Put it in the holdback queue");
-                holdbackQueue.add(putKey);
-            }
-            else {
-                trigger(new Message(self, getOneNodeFromPartition(putKey) , putKey), net);
-            }
-            //trigger(new Message(self, getOneNodeFromPartition() , putKey), net);
-            //trigger(new Message(self, message.getSource(), new PutKeyAck(putKey.key)), net);
+    private void handleOperation(Operation operation, Message message) {
+        System.out.println("Handle operation " + operation + " from " + message.getSource());
+        opClientMapping.put(operation.id, message.getSource());
+        if (active.size() < 7) {
+            System.out.println("Put it in the holdback queue");
+            holdbackQueue.add(operation);
+        }
+        else {
+            trigger(new Message(self, getOneNodeFromPartition(operation) , operation), net);
+        }
+    }
+
+    private void handleOperationResponse(OpResponse opResponse, Message message) {
+        System.out.println("Received " + opResponse + " from " + message.getSource() + "\n" + opClientMapping.toString());
+        if (opClientMapping.containsKey(opResponse.id)) {
+            System.out.println("Send " + opResponse + " to " + opClientMapping.get(opResponse.id));
+            trigger(new Message(self, opClientMapping.get(opResponse.id), opResponse), net);
+            opClientMapping.remove(opResponse.id);
+        }
+
+    }
+
+    protected final ClassMatchedHandler<PutOperation, Message> operationMessageClassMatchedHandler = new ClassMatchedHandler<PutOperation, Message>() {
+        @Override
+        public void handle(PutOperation operation, Message message) {
+            handleOperation(operation, message);
         }
     };
 
-    protected final ClassMatchedHandler<PutKeyAck, Message> addKeyHandler = new ClassMatchedHandler<PutKeyAck, Message>() {
+    protected final ClassMatchedHandler<GetOperation, Message> getOperationMessageClassMatchedHandler = new ClassMatchedHandler<GetOperation, Message>() {
         @Override
-        public void handle(PutKeyAck putKeyAck, Message message) {
-
-            System.out.println("Ack for client from Master");
-            trigger(new Message(self, putKeyAck.to, putKeyAck), net);
+        public void handle(GetOperation operation, Message message) {
+            handleOperation(operation, message);
         }
     };
 
-    private NetAddress getOneNodeFromPartition(PutKey msg){
+    protected final ClassMatchedHandler<PutResponse, Message> opResponseMessageClassMatchedHandler = new ClassMatchedHandler<PutResponse, Message>() {
+        @Override
+        public void handle(PutResponse opResponse, Message message) {
+            handleOperationResponse(opResponse, message);
+        }
+    };
+
+    protected final ClassMatchedHandler<GetResponse, Message> getResponseMessageClassMatchedHandler = new ClassMatchedHandler<GetResponse, Message>() {
+        @Override
+        public void handle(GetResponse opResponse, Message message) {
+            handleOperationResponse(opResponse, message);
+        }
+    };
+    private NetAddress getOneNodeFromPartition(Operation msg){
 
         int key = getPartitionKeyOnMessage(msg);
         Set<NetAddress> p = partitions.get(key);
@@ -272,8 +297,10 @@ public class BootstrapServer extends ComponentDefinition {
         subscribe(assignmentHandler, boot);
         subscribe(checkinHandler, net);
         subscribe(readyHandler, net);
-        subscribe(addKeyHandler, net);
-        subscribe(putKeyAckHandler, net);
+        subscribe(operationMessageClassMatchedHandler, net);
+        subscribe(getOperationMessageClassMatchedHandler, net);
+        subscribe(opResponseMessageClassMatchedHandler, net);
+        subscribe(getResponseMessageClassMatchedHandler, net);
         subscribe(suspectHandler, epfd);
         subscribe(restoreHandler, epfd);
         subscribe(decideHandler, paxos);

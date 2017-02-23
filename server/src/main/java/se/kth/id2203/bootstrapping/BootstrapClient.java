@@ -29,8 +29,7 @@ import java.util.*;
 import org.slf4j.LoggerFactory;
 import se.kth.id2203.broadcast.beb.*;
 import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
-import se.kth.id2203.kvstore.GetOperation;
-import se.kth.id2203.kvstore.PutOperation;
+import se.kth.id2203.kvstore.*;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.paxos.Abort;
@@ -150,13 +149,13 @@ public class BootstrapClient extends ComponentDefinition {
             System.out.println("-----------------");
         }
     };
-    protected final ClassMatchedHandler<PutKey, Message> putKeyHandler = new ClassMatchedHandler<PutKey, Message>() {
-        @Override
-        public void handle(PutKey putKey, Message message) {
-            System.out.println("put key at " + self.getPort() );
-            trigger(new BEB_Broadcast(putKey, topology), beb);
-        }
-    };
+//    protected final ClassMatchedHandler<PutKey, Message> putKeyHandler = new ClassMatchedHandler<PutKey, Message>() {
+//        @Override
+//        public void handle(PutKey putKey, Message message) {
+//            System.out.println("put key at " + self.getPort() );
+//            trigger(new BEB_Broadcast(putKey, topology), beb);
+//        }
+//    };
 
     protected final Handler<FinalDecide> decideHandler = new Handler<FinalDecide>() {
         @Override
@@ -165,8 +164,13 @@ public class BootstrapClient extends ComponentDefinition {
             if(e.operation instanceof PutOperation){
                 System.out.println("DECIDE " + e + " received at " + self);
                 save(e.operation.key, ((PutOperation) e.operation).value);
+                trigger(new Message(self, server, (OpResponse)(new PutResponse(e.operation.id, OpResponse.Code.OK))), net);
             }else if(e.operation instanceof GetOperation){
-                kjansd
+                if (localStore.containsKey(e.operation.key)) {
+                    trigger(new Message(self, server, (OpResponse)(new GetResponse(e.operation.id, OpResponse.Code.OK, localStore.get(e.operation.key)))), net);
+                } else {
+                    trigger(new Message(self, server, (OpResponse)(new GetResponse(e.operation.id, OpResponse.Code.NOT_FOUND, null))), net);
+                }
             }
         }
     };
@@ -184,7 +188,7 @@ public class BootstrapClient extends ComponentDefinition {
     }
 
     {
-        subscribe(putKeyHandler, net);
+//        subscribe(putKeyHandler, net);
         subscribe(beb_deliverHandler, beb);
         subscribe(topologyResponseMessageClassMatchedHandler, net);
         subscribe(startHandler, control);

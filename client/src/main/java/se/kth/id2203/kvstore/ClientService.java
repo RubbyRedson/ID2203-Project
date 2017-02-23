@@ -25,28 +25,21 @@ package se.kth.id2203.kvstore;
 
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.SettableFuture;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.Future;
 import org.slf4j.LoggerFactory;
-import se.kth.id2203.bootstrapping.PutKey;
-import se.kth.id2203.bootstrapping.PutKeyAck;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.overlay.Connect;
 import se.kth.id2203.overlay.RouteMsg;
-import se.sics.kompics.ClassMatchedHandler;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Handler;
-import se.sics.kompics.Kompics;
-import se.sics.kompics.KompicsEvent;
-import se.sics.kompics.Positive;
-import se.sics.kompics.Start;
+import se.sics.kompics.*;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.timer.ScheduleTimeout;
 import se.sics.kompics.timer.Timeout;
 import se.sics.kompics.timer.Timer;
+
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.Future;
 
 /**
  *
@@ -75,7 +68,7 @@ public class ClientService extends ComponentDefinition {
             st.setTimeoutEvent(new ConnectTimeout(st));
             trigger(new Message(self, server, new Connect(st.getTimeoutEvent().getTimeoutId())), net);
 
-            PutKey putKey = new PutKey("23hash23", "The value", self);
+            Operation putKey = new PutOperation("23hash23", "The value");
             trigger(new Message(self, server, putKey), net);
             trigger(st, timer);
         }
@@ -116,6 +109,9 @@ public class ClientService extends ComponentDefinition {
             pending.put(event.op.id, event.f);
         }
     };
+
+
+
     protected final ClassMatchedHandler<OpResponse, Message> responseHandler = new ClassMatchedHandler<OpResponse, Message>() {
         
         @Override
@@ -130,10 +126,10 @@ public class ClientService extends ComponentDefinition {
         }
     };
 
-    protected final ClassMatchedHandler<PutKeyAck, Message> putKeyAckResponse = new ClassMatchedHandler<PutKeyAck, Message>() {
+    protected final ClassMatchedHandler<OpResponse, Message> putKeyAckResponse = new ClassMatchedHandler<OpResponse, Message>() {
         @Override
-        public void handle(PutKeyAck putKeyAck, Message message) {
-            System.out.println("mmkkey, so the key:" + putKeyAck.key + " was added and acked");
+        public void handle(OpResponse opResponse, Message message) {
+            System.out.println("Received opResponse " + opResponse);
         }
     };
     
