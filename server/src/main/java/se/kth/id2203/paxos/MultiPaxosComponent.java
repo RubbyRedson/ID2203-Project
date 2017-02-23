@@ -8,6 +8,7 @@ import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
 import se.kth.id2203.broadcast.epfd.Timeout;
 import se.kth.id2203.broadcast.perfect_link.PL_Deliver;
 import se.kth.id2203.broadcast.perfect_link.PerfectLink;
+import se.kth.id2203.kvstore.Operation;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.*;
@@ -15,7 +16,9 @@ import se.sics.kompics.network.Network;
 import se.sics.kompics.timer.ScheduleTimeout;
 import se.sics.kompics.timer.Timer;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -31,11 +34,57 @@ public class MultiPaxosComponent extends ComponentDefinition {
     private NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     private Set<NetAddress> topology = new HashSet<>();
 
-    private int timestamp = 0;
-    private int preparedTimestamp = 0;
+    private int t;
+    private int prepts;
+    private int ats;
+    private int al;
+    private int pts;
+    private int pl;
+
+    private List<Operation> av;
+    private List<Operation> pv;
+    private List<Operation> proposedValues;
 
     private boolean updateTopology = false;
     private Set<NetAddress> newTopology = new HashSet<>();
+
+    private int readlist;
+
+    private List<Integer> accepted;
+    private List<Integer> decided;
+
+    private void init(){
+        t = 0;
+        prepts = 0;
+
+        //Acceptor
+        ats = 0;
+        av = new ArrayList<>();
+        al = 0;
+
+
+        //Proposer
+        pts = 0;
+        pv = new ArrayList<>();
+        pl = 0;
+
+        proposedValues = new ArrayList<>();
+
+        readlist = -1;
+
+        accepted = new ArrayList<>();
+        decided = new ArrayList<>();
+
+
+    }
+
+
+    protected final Handler<Start> startHander = new Handler<Start>() {
+        @Override
+        public void handle(Start start) {
+            init();
+        }
+    };
 
 
     protected final ClassMatchedHandler<TopologyResponse, Message> topologyResponseMessageClassMatchedHandler = new ClassMatchedHandler<TopologyResponse, Message>() {
@@ -43,7 +92,6 @@ public class MultiPaxosComponent extends ComponentDefinition {
         public void handle(TopologyResponse topologyResponse, Message message) {
             newTopology = topologyResponse.topology;
             updateTopology = true;
-
 
             System.out.println("----- Topology received at MultiPaxos ---");
             System.out.println(newTopology);
@@ -62,6 +110,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
 
 
     {
+        subscribe(startHander, control);
         subscribe(topologyResponseMessageClassMatchedHandler, net);
         subscribe(proposeHandler, asc);
     }
