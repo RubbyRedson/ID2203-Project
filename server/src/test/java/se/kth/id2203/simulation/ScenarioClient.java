@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.kth.id2203.kvstore.OpResponse;
 import se.kth.id2203.kvstore.Operation;
+import se.kth.id2203.kvstore.PutOperation;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.overlay.RouteMsg;
@@ -63,7 +64,11 @@ public class ScenarioClient extends ComponentDefinition {
         public void handle(Start event) {
             int messages = res.get("messages", Integer.class);
             for (int i = 0; i < messages; i++) {
-                Operation op = new Operation("test" + i);
+
+               // Operation op = new Operation("test" + i);
+
+                Operation op = new PutOperation("123", "my val from client");
+
                 RouteMsg rm = new RouteMsg(op.key, op); // don't know which partition is responsible, so ask the bootstrap server to forward it
                 trigger(new Message(self, server, rm), net);
                 pending.put(op.id, op.key);

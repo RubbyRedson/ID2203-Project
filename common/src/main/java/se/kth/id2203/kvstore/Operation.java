@@ -32,7 +32,7 @@ import se.sics.kompics.KompicsEvent;
  *
  * @author Lars Kroll <lkroll@kth.se>
  */
-public class Operation implements KompicsEvent, Serializable {
+public abstract class Operation implements KompicsEvent, Serializable {
 
     private static final long serialVersionUID = 2525600659083087179L;
 

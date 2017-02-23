@@ -29,6 +29,8 @@ import java.util.*;
 import org.slf4j.LoggerFactory;
 import se.kth.id2203.broadcast.beb.*;
 import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
+import se.kth.id2203.kvstore.GetOperation;
+import se.kth.id2203.kvstore.PutOperation;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.paxos.Abort;
@@ -76,12 +78,19 @@ public class BootstrapClient extends ComponentDefinition {
 
     private UUID timeoutId;
 
+    private Map<String, String> localStore;
+
+    private void save(String key, String val){
+        localStore.put(key, val);
+    }
+
     //******* Handlers ******
     protected final Handler<Start> startHandler = new Handler<Start>() {
 
         @Override
         public void handle(Start event) {
             LOG.debug("Starting bootstrap client on {}", self);
+            localStore = new HashMap<>();
             long timeout = (config().getValue("id2203.project.keepAlivePeriod", Long.class) * 2);
             SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(timeout, timeout);
             spt.setTimeoutEvent(new BSTimeout(spt));
@@ -152,8 +161,13 @@ public class BootstrapClient extends ComponentDefinition {
     protected final Handler<FinalDecide> decideHandler = new Handler<FinalDecide>() {
         @Override
         public void handle(FinalDecide e) {
-            System.out.println("DECIDE " + e + " received at " + self);
 
+            if(e.operation instanceof PutOperation){
+                System.out.println("DECIDE " + e + " received at " + self);
+                save(e.operation.key, ((PutOperation) e.operation).value);
+            }else if(e.operation instanceof GetOperation){
+                kjansd
+            }
         }
     };
 

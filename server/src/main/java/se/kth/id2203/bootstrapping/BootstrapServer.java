@@ -35,6 +35,7 @@ import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
 import se.kth.id2203.broadcast.epfd.Restore;
 import se.kth.id2203.broadcast.epfd.Suspect;
 import se.kth.id2203.kvstore.Operation;
+import se.kth.id2203.kvstore.PutOperation;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.paxos.*;
@@ -157,7 +158,7 @@ public class BootstrapServer extends ComponentDefinition {
                 while (iterator.hasNext()) {
                     PutKey msg = (PutKey) iterator.next();
                     System.out.println("Trigger it!");
-                    trigger(new Propose(new Operation("Wubba lubba dub dub")), paxos);
+                    trigger(new Propose(new PutOperation("32hash32", "my value")), paxos);
                     //trigger(new Message(self, getOneNodeFromPartition(msg) , msg), net);
                     toRemove.add(msg);
                 }
