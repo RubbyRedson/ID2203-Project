@@ -117,12 +117,12 @@ public class ClientService extends ComponentDefinition {
 
     private void handleOperationResponse(OpResponse opResponse) {
         LOG.debug("Got OpResponse: {}", opResponse);
-        SettableFuture<OpResponse> sf = pending.remove(opResponse.id);
-        if (sf != null) {
-            sf.set(opResponse);
-        } else {
-            LOG.warn("ID {} was not pending! Ignoring response.", opResponse.id);
-        }
+//        SettableFuture<OpResponse> sf = pending.remove(opResponse.id);
+//        if (sf != null) {
+//            sf.set(opResponse);
+//        } else {
+//            LOG.warn("ID {} was not pending! Ignoring response.", opResponse.id);
+//        }
 
     }
 
