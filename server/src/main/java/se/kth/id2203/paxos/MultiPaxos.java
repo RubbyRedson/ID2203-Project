@@ -8,6 +8,7 @@ import se.sics.kompics.PortType;
 public class MultiPaxos extends PortType {
     {
         request(Propose.class);
+        indication(Propose.class);
         indication(FinalDecide.class);
         indication(Abort.class);
     }

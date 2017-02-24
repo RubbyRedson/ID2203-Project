@@ -1,8 +1,4 @@
-import scnarios.CasTesting;
-import scnarios.CrashAndRestart;
-import scnarios.CrashNodes;
-import scnarios.Linearizability;
-import scnarios.Setup;
+import scnarios.*;
 import se.sics.kompics.simulator.SimulationScenario;
 import se.sics.kompics.simulator.run.LauncherComp;
 
@@ -31,7 +27,11 @@ public class Main {
         //casTesting.simulate(LauncherComp.class);
 
         //Test to add a couple of keys on different clients
-        SimulationScenario simpleBootScenario = Linearizability.simpleSetup();
-        simpleBootScenario.simulate(LauncherComp.class);
+        //SimulationScenario simpleBootScenario = Linearizability.simpleSetup();
+        //simpleBootScenario.simulate(LauncherComp.class);
+
+        //Test the reconfigurability
+        SimulationScenario simpleReconfig = Reconfig.simpleSetup();
+        simpleReconfig.simulate(LauncherComp.class);
     }
 }

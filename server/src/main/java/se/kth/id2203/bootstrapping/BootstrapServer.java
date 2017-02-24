@@ -34,6 +34,7 @@ import se.kth.id2203.broadcast.beb.TopologyResponse;
 import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
 import se.kth.id2203.broadcast.epfd.Restore;
 import se.kth.id2203.broadcast.epfd.Suspect;
+import se.kth.id2203.broadcast.perfect_link.PL_Send;
 import se.kth.id2203.kvstore.*;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
@@ -238,9 +239,22 @@ public class BootstrapServer extends ComponentDefinition {
             handleOperationResponse(opResponse, message);
         }
     };
+
     private NetAddress getOneNodeFromPartition(Operation msg){
 
         int key = getPartitionKeyOnMessage(msg);
+        Set<NetAddress> p = partitions.get(key);
+
+        if(p.size() > 0){
+            return (NetAddress) p.toArray()[1];
+        }else{
+            return null;
+        }
+    }
+
+
+    private NetAddress getOneNodeFromPartitionId(int key){
+
         Set<NetAddress> p = partitions.get(key);
 
         if(p.size() > 0){
@@ -255,6 +269,27 @@ public class BootstrapServer extends ComponentDefinition {
         @Override
         public void handle(Suspect e) {
             System.out.println("SUSPECTED " + e.p);
+
+            //Grap a random node in the partition
+            NetAddress randomNode = null;
+            Set<NetAddress> p = partitions.get(getPartitionKey(e.p));
+            for (NetAddress adr : p) {
+                if (!e.p.equals(adr)) {
+                    randomNode = adr;
+                    break;
+                }
+            }
+
+            if(randomNode == null){
+                System.out.println("PARTITION IS DEAD");
+            }
+
+            partitions.get(getPartitionKey(e.p)).remove(e.p);
+
+            Set<NetAddress> newPartition = partitions.get(getPartitionKey(e.p));
+
+            trigger(new Message(self, randomNode, new TopologyResponse(newPartition, getPartitionKey(e.p))), net);
+            trigger(new Propose(new StopSignOperation(newPartition, 0), getPartitionKey(e.p)), paxos);
         }
     };
 

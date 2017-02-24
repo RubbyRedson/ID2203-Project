@@ -1,22 +1,26 @@
 package scnarios;
 
 import se.kth.id2203.ParentComponent;
+import se.kth.id2203.kvstore.KeyAdderClient;
 import se.sics.kompics.simulator.SimulationScenario;
+import se.sics.kompics.simulator.adaptor.Operation;
 import se.sics.kompics.simulator.adaptor.Operation1;
 import se.sics.kompics.simulator.adaptor.distributions.extra.BasicIntSequentialDistribution;
-import se.sics.kompics.simulator.events.system.KillNodeEvent;
 import se.sics.kompics.simulator.events.system.StartNodeEvent;
 
+import static scnarios.CrashNodes.START_PORTS;
+import static scnarios.CrashNodes.killNode;
+import static scnarios.CrashNodes.startSlaveWithPortCounter;
+import static scnarios.Linearizability.startKeyAdderClient;
+import static scnarios.Setup.startClient;
 import static scnarios.Setup.startMaster;
-
+import static scnarios.Setup.startSlave;
 
 /**
- * Created by victoraxelsson on 2017-02-17.
+ * Created by victoraxelsson on 2017-02-24.
  */
-public class CrashNodes {
-
+public class Reconfig {
     private static int startedCounter = 0;
-    public static final int START_PORTS = 45679; //master + 1
 
     public static SimulationScenario simpleSetup() {
         return new SimulationScenario() {
@@ -34,7 +38,7 @@ public class CrashNodes {
                         startedCounter = 0;
 
                         eventInterArrivalTime(constant(200));
-                        raise(10, startSlaveWithPortCounter, new BasicIntSequentialDistribution(START_PORTS));
+                        raise(10, startSlaveWithPortCounterLocal, new BasicIntSequentialDistribution(START_PORTS));
                     }
                 };
 
@@ -47,24 +51,26 @@ public class CrashNodes {
                     }
                 };
 
+                SimulationScenario.StochasticProcess setupClient = new SimulationScenario.StochasticProcess() {
+                    {
+                        //10 slaves
+                        eventInterArrivalTime(constant(200));
+                        raise(1, startClient);
+                    }
+                };
+
                 setupMaster.start();
                 setupSlaves.startAfterStartOf(2000, setupMaster);
-                crashSomeNode.startAfterStartOf(30000, setupSlaves);
+
+                setupClient.startAfterStartOf(2000, setupSlaves);
+
+                crashSomeNode.startAfterStartOf(30000, setupClient);
                 terminateAfterTerminationOf(15000, crashSomeNode);
             }
         };
     }
 
-
-    public static Operation1 killNode = new Operation1<KillNodeEvent, Integer>() {
-        @Override
-        public KillNodeEvent generate(Integer integer) {
-            System.out.println("---- killNode: "+integer+" ----");
-            return new KillNode(integer);
-        }
-    };
-
-    public static Operation1 startSlaveWithPortCounter = new Operation1<StartNodeEvent, Integer>() {
+    private static Operation1 startSlaveWithPortCounterLocal = new Operation1<StartNodeEvent, Integer>() {
 
         @Override
         public StartNodeEvent generate(Integer integer) {

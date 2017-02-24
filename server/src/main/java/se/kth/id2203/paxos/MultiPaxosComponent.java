@@ -102,6 +102,21 @@ public class MultiPaxosComponent extends ComponentDefinition {
         return (int) Math.floor(getN() / 2.0);
     }
 
+
+    private List<Operation> getCatchupList(int localCfg){
+        int counter = 0;
+        for(Operation a : av){
+            if(a.getClass() == StopSignOperation.class){
+                StopSignOperation ss = (StopSignOperation)a;
+                if(ss.cfg == localCfg){
+                    return suffix(av, counter);
+                }
+            }
+            counter++;
+        }
+        return null;
+    }
+
     private void propose(Propose propose) {
         if (propose.partitionId == partitionId) {
             t++;
@@ -144,27 +159,25 @@ public class MultiPaxosComponent extends ComponentDefinition {
         }
     }
 
-    private void prepare(Prepare prepare, NetAddress q) {
-        //TODO check if prepare.cfg < current.cfg
-        // if it is same - run normally
-        // if current.cfg < prepare.cfg then need to send NackCfg with current.cfg
-        // if current.cfg > prepare.cfg then need to send Decide with whole sequence back to proposer
 
+    private void prepare(Prepare prepare, NetAddress q) {
         t = Math.max(t, prepare.t) + 1;
 
         if (prepare.cfg > cfg) {
             trigger(new PL_Send(self, q, new NackCfg(cfg, t)), fpl);
         } else if (prepare.cfg < cfg) {
-            //TODO for loop with sending of Operations from the corresponding configuration SS - 1
-            trigger(new PL_Send(self, q, new FinalDecide(null)), fpl);
+            List<Operation> vd = getCatchupList(prepare.cfg);
+            trigger(new PL_Send(self, q, new CatchupDecide(t, cfg, vd)), fpl);
+
+        }else{
+            if (prepare.pts < prepts) {
+                trigger(new PL_Send(self, q, new Nack(prepare.pts, t)), fpl);
+            } else {
+                prepts = prepare.pts;
+                trigger(new PL_Send(self, q, new PrepareAck(prepare.pts, ats, al, t, suffix(av, prepare.al))), fpl); //called Promise in the lecture
+            }
         }
 
-        if (prepare.pts < prepts) {
-            trigger(new PL_Send(self, q, new Nack(prepare.pts, t)), fpl);
-        } else {
-            prepts = prepare.pts;
-            trigger(new PL_Send(self, q, new PrepareAck(prepare.pts, ats, al, t, suffix(av, prepare.al))), fpl); //called Promise in the lecture
-        }
     }
 
     private void nack(Nack nack) {
@@ -270,16 +283,51 @@ public class MultiPaxosComponent extends ComponentDefinition {
         t = Math.max(t, decide.t) + 1;
         if (decide.pts == prepts) {
             while (al < decide.pl) {
+
+                if(al == decide.pl -1){
+                    if(av.get(al).getClass() == StopSignOperation.class){
+                        cfg = av.size();
+                        topology = ((StopSignOperation) av.get(al)).topology;
+                        pts = ats;
+
+                        for(NetAddress adr : topology){
+                            trigger(new PL_Send(self, adr, new CatchupDecide(0, cfg, av)), fpl);
+                        }
+                    }
+                }
+
                 trigger(new FinalDecide(av.get(al)), asc);
                 al++;
             }
         }
     }
 
+
+    private void catchupDecide(CatchupDecide decide) {
+        t = decide.ts;
+        cfg = decide.cfg;
+        av.addAll(decide.vd);
+
+        while (al < decide.vd.size()) {
+            trigger(new FinalDecide(av.get(al)), asc);
+            al++;
+        }
+    }
+
     private void nackCfg(NackCfg nackCfg, NetAddress q) {
         //TODO send FinalDecides from nackCfg.cfg - 1 SS up until the most recent
         // after that resend the Prepare like we did in propose
+
+        List<Operation> vd = getCatchupList(nackCfg.cfg);
+        trigger(new PL_Send(self, q, new CatchupDecide(t, cfg, vd)), fpl);
     }
+
+    protected final ClassMatchedHandler<CatchupDecide, PL_Deliver> cathupHandler = new ClassMatchedHandler<CatchupDecide, PL_Deliver>() {
+        @Override
+        public void handle(CatchupDecide catchupDecide, PL_Deliver pl_deliver) {
+            catchupDecide(catchupDecide);
+        }
+    };
 
     protected final ClassMatchedHandler<NackCfg, PL_Deliver> nackCfgPLDeliverClassMatchedHandler = new ClassMatchedHandler<NackCfg, PL_Deliver>() {
         @Override
@@ -348,6 +396,8 @@ public class MultiPaxosComponent extends ComponentDefinition {
     };
 
 
+
+
     protected final ClassMatchedHandler<TopologyResponse, Message> topologyResponseMessageClassMatchedHandler = new ClassMatchedHandler<TopologyResponse, Message>() {
         @Override
         public void handle(TopologyResponse topologyResponse, Message message) {
@@ -359,6 +409,10 @@ public class MultiPaxosComponent extends ComponentDefinition {
             if (partitionId == topologyResponse.partitionId) {
                 newTopology = topologyResponse.topology;
                 updateTopology = true;
+
+                if(self.getPort() == 45678){
+                    trigger(new Propose(new StopSignOperation(newTopology, cfg), topologyResponse.partitionId), asc);
+                }
 
                 System.out.println("----- Topology received at MultiPaxos ---");
                 System.out.println(newTopology);
@@ -372,12 +426,14 @@ public class MultiPaxosComponent extends ComponentDefinition {
         @Override
         public void handle(Propose propose) {
             //System.out.println("Multipaxos at " + self + " got " + propose);
+
             propose(propose);
             //trigger(new Decide("someval"), asc);
         }
     };
 
     {
+        subscribe(cathupHandler, fpl);
         subscribe(decideHandler, fpl);
         subscribe(acceptAck, fpl);
         subscribe(nackCfgPLDeliverClassMatchedHandler, fpl);
