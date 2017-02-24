@@ -1,3 +1,4 @@
+import scnarios.CasTesting;
 import scnarios.CrashAndRestart;
 import scnarios.CrashNodes;
 import scnarios.Setup;
@@ -14,8 +15,8 @@ public class Main {
         SimulationScenario.setSeed(seed);
 
         //Boot without failures
-        SimulationScenario simpleBootScenario = Setup.simpleSetup();
-        simpleBootScenario.simulate(LauncherComp.class);
+        //SimulationScenario simpleBootScenario = Setup.simpleSetup();
+        //simpleBootScenario.simulate(LauncherComp.class);
 
         //Boot with failures
         //SimulationScenario bootWithFailure = CrashNodes.simpleSetup();
@@ -25,5 +26,7 @@ public class Main {
         //crashAndRestart.simulate(LauncherComp.class);
 
         //CAS test
+        SimulationScenario casTesting = CasTesting.casSetup();
+        casTesting.simulate(LauncherComp.class);
     }
 }
