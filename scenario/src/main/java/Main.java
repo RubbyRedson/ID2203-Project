@@ -22,11 +22,11 @@ public class Main {
         //SimulationScenario bootWithFailure = CrashNodes.simpleSetup();
         //bootWithFailure.simulate(LauncherComp.class);
 
-        //SimulationScenario crashAndRestart = CrashAndRestart.simpleSetup();
-        //crashAndRestart.simulate(LauncherComp.class);
+        SimulationScenario crashAndRestart = CrashAndRestart.simpleSetup();
+        crashAndRestart.simulate(LauncherComp.class);
 
         //CAS test
-        SimulationScenario casTesting = CasTesting.casSetup();
-        casTesting.simulate(LauncherComp.class);
+        //SimulationScenario casTesting = CasTesting.casSetup();
+        //casTesting.simulate(LauncherComp.class);
     }
 }

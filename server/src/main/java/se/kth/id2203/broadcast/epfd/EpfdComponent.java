@@ -57,8 +57,16 @@ public class EpfdComponent extends ComponentDefinition {
         public void handle(Timeout e) {
             if (updateTopology) {
                 topology = newTopology;
-                alive = copySet(topology);
-                suspected.clear();
+                if (suspected.size() == 0) {
+                    alive = copySet(topology);
+                    suspected.clear();
+                } else {
+                    for (NetAddress adr : newTopology) {
+                        if (!suspected.contains(adr)) {
+                            alive.add(adr);
+                        }
+                    }
+                }
                 updateTopology = false;
             }
 
