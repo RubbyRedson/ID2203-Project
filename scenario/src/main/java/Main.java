@@ -1,6 +1,7 @@
 import scnarios.CasTesting;
 import scnarios.CrashAndRestart;
 import scnarios.CrashNodes;
+import scnarios.Linearizability;
 import scnarios.Setup;
 import se.sics.kompics.simulator.SimulationScenario;
 import se.sics.kompics.simulator.run.LauncherComp;
@@ -22,11 +23,15 @@ public class Main {
         //SimulationScenario bootWithFailure = CrashNodes.simpleSetup();
         //bootWithFailure.simulate(LauncherComp.class);
 
-        SimulationScenario crashAndRestart = CrashAndRestart.simpleSetup();
-        crashAndRestart.simulate(LauncherComp.class);
+        //SimulationScenario crashAndRestart = CrashAndRestart.simpleSetup();
+        //crashAndRestart.simulate(LauncherComp.class);
 
         //CAS test
         //SimulationScenario casTesting = CasTesting.casSetup();
         //casTesting.simulate(LauncherComp.class);
+
+        //Test to add a couple of keys on different clients
+        SimulationScenario simpleBootScenario = Linearizability.simpleSetup();
+        simpleBootScenario.simulate(LauncherComp.class);
     }
 }
