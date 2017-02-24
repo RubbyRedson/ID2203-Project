@@ -10,15 +10,18 @@ import java.io.Serializable;
  */
 public class Propose implements KompicsEvent, Serializable {
     public final Operation value;
+    public final int partitionId;
 
-    public Propose(Operation value) {
+    public Propose(Operation value, int partitionId) {
         this.value = value;
+        this.partitionId = partitionId;
     }
 
     @Override
     public String toString() {
         return "Propose{" +
-                "value='" + value + '\'' +
+                "value=" + value +
+                ", partitionId=" + partitionId +
                 '}';
     }
 }

@@ -39,7 +39,6 @@ import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.paxos.*;
 import se.sics.kompics.*;
-import se.sics.kompics.network.Address;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.timer.CancelPeriodicTimeout;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
@@ -56,7 +55,7 @@ public class BootstrapServer extends ComponentDefinition {
     protected final Positive<EventuallyPerfectFailureDetector> epfd = requires(EventuallyPerfectFailureDetector.class);
     protected final Positive<MultiPaxos> paxos = requires(MultiPaxos.class);
     //******* Fields ******
-    final static int PARTITION_COUNT = 2;
+    public final static int PARTITION_COUNT = 2;
     final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     final int bootThreshold = config().getValue("id2203.project.bootThreshold", Integer.class);
     private State state = State.COLLECTING;
@@ -151,7 +150,7 @@ public class BootstrapServer extends ComponentDefinition {
                 trigger(new Message(self, adr, new TopologyResponse(p, partitionKey)), net);
             }
 
-            trigger(new Message(self, self, new TopologyResponse(active, -1)), net);
+            trigger(new Message(self, self, new TopologyResponse(p, partitionKey)), net);
 
             if (holdbackQueue.size() > 0 && active.size() > 7) {
                 System.out.println("Empty holdbackqueue " + holdbackQueue);
@@ -160,7 +159,7 @@ public class BootstrapServer extends ComponentDefinition {
                 while (iterator.hasNext()) {
                     Operation msg = (Operation) iterator.next();
                     System.out.println("Trigger it!");
-                    trigger(new Propose(msg), paxos);
+                    trigger(new Propose(msg, getPartitionKeyOnMessage(msg)), paxos);
                     //trigger(new Message(self, getOneNodeFromPartition(msg) , msg), net);
                     toRemove.add(msg);
                 }

@@ -16,6 +16,7 @@ import se.kth.id2203.overlay.Routing;
 import se.kth.id2203.overlay.VSOverlayManager;
 import se.kth.id2203.paxos.MultiPaxos;
 import se.kth.id2203.paxos.MultiPaxosComponent;
+import se.kth.id2203.paxos.PaxosInit;
 import se.sics.kompics.Channel;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
@@ -37,7 +38,6 @@ public class ParentComponent
     private Component basicBroadcast = create(BasicBroadcast.class, Init.NONE);
     private Component pLink = create(PerfectLinkComponent.class, Init.NONE);
     private Component epfd = create(EpfdComponent.class, Init.NONE);
-    private Component paxos = create(MultiPaxosComponent.class, Init.NONE);
 
     {
 
@@ -46,8 +46,21 @@ public class ParentComponent
             boot = create(BootstrapClient.class, Init.NONE);
             connect(basicBroadcast.getPositive(BestEffortBroadcast.class), boot.getNegative(BestEffortBroadcast.class)
                     , Channel.TWO_WAY);
+            Component paxos = create(MultiPaxosComponent.class, Init.NONE);
+            connect(pLink.getPositive(PerfectLink.class), paxos.getNegative(PerfectLink.class), Channel.TWO_WAY);
+            connect(paxos.getPositive(MultiPaxos.class),
+                    boot.getNegative(MultiPaxos.class), Channel.TWO_WAY);
+            connect(net, paxos.getNegative(Network.class), Channel.TWO_WAY);
         } else { // start in server mode
             boot = create(BootstrapServer.class, Init.NONE);
+            // Paxos
+            for (int i = 0; i < BootstrapServer.PARTITION_COUNT; i++) {
+                Component paxos = create(MultiPaxosComponent.class, new PaxosInit(i));
+                connect(pLink.getPositive(PerfectLink.class), paxos.getNegative(PerfectLink.class), Channel.TWO_WAY);
+                connect(paxos.getPositive(MultiPaxos.class),
+                        boot.getNegative(MultiPaxos.class), Channel.TWO_WAY);
+                connect(net, paxos.getNegative(Network.class), Channel.TWO_WAY);
+            }
         }
 
         connect(timer, boot.getNegative(Timer.class), Channel.TWO_WAY);
@@ -69,10 +82,6 @@ public class ParentComponent
         connect(pLink.getPositive(PerfectLink.class), epfd.getNegative(PerfectLink.class), Channel.TWO_WAY);
         connect(timer, epfd.getNegative(Timer.class), Channel.TWO_WAY);
 
-        // Paxos
-        connect(pLink.getPositive(PerfectLink.class), paxos.getNegative(PerfectLink.class), Channel.TWO_WAY);
-        connect(paxos.getPositive(MultiPaxos.class),
-                boot.getNegative(MultiPaxos.class), Channel.TWO_WAY);
-        connect(net, paxos.getNegative(Network.class), Channel.TWO_WAY);
+
     }
 }
