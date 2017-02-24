@@ -7,6 +7,7 @@ import se.kth.id2203.broadcast.perfect_link.PL_Deliver;
 import se.kth.id2203.broadcast.perfect_link.PL_Send;
 import se.kth.id2203.broadcast.perfect_link.PerfectLink;
 import se.kth.id2203.kvstore.Operation;
+import se.kth.id2203.kvstore.StopSignOperation;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.*;
@@ -28,6 +29,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
     private Set<NetAddress> topology = new HashSet<>();
 
     private int t;
+    private int cfg; // Configuration number
     private int prepts;
     private int ats;
     private int al;
@@ -58,6 +60,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
 
     private void init() {
         t = 0;
+        cfg = 0;
         prepts = 0;
 
         //Acceptor
@@ -121,7 +124,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
                 decided = new HashMap<>();
 
                 for (NetAddress p : topology) {
-                    trigger(new PL_Send(self, p, new Prepare(pts, al, t)), fpl);
+                    trigger(new PL_Send(self, p, new Prepare(cfg, pts, al, t)), fpl);
                 }
 
             } else if (readlist.size() <= getMinorityCount()) {
@@ -142,12 +145,25 @@ public class MultiPaxosComponent extends ComponentDefinition {
     }
 
     private void prepare(Prepare prepare, NetAddress q) {
+        //TODO check if prepare.cfg < current.cfg
+        // if it is same - run normally
+        // if current.cfg < prepare.cfg then need to send NackCfg with current.cfg
+        // if current.cfg > prepare.cfg then need to send Decide with whole sequence back to proposer
+
         t = Math.max(t, prepare.t) + 1;
+
+        if (prepare.cfg > cfg) {
+            trigger(new PL_Send(self, q, new NackCfg(cfg, t)), fpl);
+        } else if (prepare.cfg < cfg) {
+            //TODO for loop with sending of Operations from the corresponding configuration SS - 1
+            trigger(new PL_Send(self, q, new FinalDecide(null)), fpl);
+        }
+
         if (prepare.pts < prepts) {
             trigger(new PL_Send(self, q, new Nack(prepare.pts, t)), fpl);
         } else {
             prepts = prepare.pts;
-            trigger(new PL_Send(self, q, new PrepareAck(prepare.pts, ats, al, t, suffix(av, prepare.al))), fpl);
+            trigger(new PL_Send(self, q, new PrepareAck(prepare.pts, ats, al, t, suffix(av, prepare.al))), fpl); //called Promise in the lecture
         }
     }
 
@@ -184,7 +200,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
                 }
 
                 for (Operation v : proposedValues) {
-                    if (!pv.contains(v)) {
+                    if (!pv.contains(v) && !(cfg < pv.size() && pv.get(pv.size() - 1).getClass() == StopSignOperation.class)) { //TODO add check that not ( cfg < pv.size() ?? && that last command in proposed values is SS )
                         pv.add(v);
                     }
                 }
@@ -260,6 +276,17 @@ public class MultiPaxosComponent extends ComponentDefinition {
         }
     }
 
+    private void nackCfg(NackCfg nackCfg, NetAddress q) {
+        //TODO send FinalDecides from nackCfg.cfg - 1 SS up until the most recent
+        // after that resend the Prepare like we did in propose
+    }
+
+    protected final ClassMatchedHandler<NackCfg, PL_Deliver> nackCfgPLDeliverClassMatchedHandler = new ClassMatchedHandler<NackCfg, PL_Deliver>() {
+        @Override
+        public void handle(NackCfg nackCfg, PL_Deliver pl_deliver) {
+            nackCfg(nackCfg, pl_deliver.src);
+        }
+    };
 
     protected final Handler<Start> startHander = new Handler<Start>() {
         @Override
@@ -353,6 +380,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
     {
         subscribe(decideHandler, fpl);
         subscribe(acceptAck, fpl);
+        subscribe(nackCfgPLDeliverClassMatchedHandler, fpl);
         subscribe(acceptHander, fpl);
         subscribe(prepareACkHandler, fpl);
         subscribe(nackHandler, fpl);
