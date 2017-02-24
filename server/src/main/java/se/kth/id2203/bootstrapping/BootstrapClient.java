@@ -80,6 +80,7 @@ public class BootstrapClient extends ComponentDefinition {
     private Map<String, String> localStore;
 
     private void save(String key, String val){
+        System.out.println(val + "\n WAS SAVED ON \n" + self + " in partition "+partitionId+"\n-------");
         localStore.put(key, val);
     }
 

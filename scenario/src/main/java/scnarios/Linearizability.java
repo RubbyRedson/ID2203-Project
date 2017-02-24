@@ -38,7 +38,7 @@ public class Linearizability {
                     {
                         //10 slaves
                         eventInterArrivalTime(constant(200));
-                        raise(1, startKeyAdderClient);
+                        raise(10, startKeyAdderClient);
                     }
                 };
 
@@ -48,10 +48,6 @@ public class Linearizability {
                 setupClients.startAfterStartOf(2000, setupSlaves);
                 terminateAfterTerminationOf(30000, setupClients);
 
-                // setupMaster.start();
-                // setupSlaves.startAfterStartOf(2000, setupMaster);
-                //setupClients.startAfterStartOf(3000, setupSlaves);
-                //terminateAfterTerminationOf(30000, setupClient);
             }
         };
     }

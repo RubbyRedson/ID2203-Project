@@ -1,5 +1,6 @@
 import scnarios.CrashAndRestart;
 import scnarios.CrashNodes;
+import scnarios.Linearizability;
 import scnarios.Setup;
 import se.sics.kompics.simulator.SimulationScenario;
 import se.sics.kompics.simulator.run.LauncherComp;
@@ -14,8 +15,8 @@ public class Main {
         SimulationScenario.setSeed(seed);
 
         //Boot without failures
-        SimulationScenario simpleBootScenario = Setup.simpleSetup();
-        simpleBootScenario.simulate(LauncherComp.class);
+        //SimulationScenario simpleBootScenario = Setup.simpleSetup();
+        //simpleBootScenario.simulate(LauncherComp.class);
 
         //Boot with failures
         //SimulationScenario bootWithFailure = CrashNodes.simpleSetup();
@@ -24,5 +25,8 @@ public class Main {
         //SimulationScenario crashAndRestart = CrashAndRestart.simpleSetup();
         //crashAndRestart.simulate(LauncherComp.class);
 
+        //Test to add a couple of keys on different clients
+        SimulationScenario simpleBootScenario = Linearizability.simpleSetup();
+        simpleBootScenario.simulate(LauncherComp.class);
     }
 }
