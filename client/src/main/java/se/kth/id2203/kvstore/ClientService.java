@@ -52,10 +52,16 @@ public class ClientService extends ComponentDefinition {
     final Positive<Timer> timer = requires(Timer.class);
     final Positive<Network> net = requires(Network.class);
     //******* Fields ******
-    private final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
-    private final NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
+    protected final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
+    protected final NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
     private Optional<Connect.Ack> connected = Optional.absent();
     private final Map<UUID, SettableFuture<OpResponse>> pending = new TreeMap<>();
+
+
+    protected void doStartupStuff(){
+        Operation putKey = new PutOperation("23hash23", "The value");
+        trigger(new Message(self, server, putKey), net);
+    }
 
     //******* Handlers ******
     protected final Handler<Start> startHandler = new Handler<Start>() {
@@ -68,8 +74,7 @@ public class ClientService extends ComponentDefinition {
             st.setTimeoutEvent(new ConnectTimeout(st));
             trigger(new Message(self, server, new Connect(st.getTimeoutEvent().getTimeoutId())), net);
 
-            Operation putKey = new PutOperation("23hash23", "The value");
-            trigger(new Message(self, server, putKey), net);
+            doStartupStuff();
             trigger(st, timer);
         }
     };
