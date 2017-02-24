@@ -206,6 +206,13 @@ public class BootstrapServer extends ComponentDefinition {
         }
     };
 
+    protected final ClassMatchedHandler<CasOperation, Message> casOperationMessageClassMatchedHandler = new ClassMatchedHandler<CasOperation, Message>() {
+        @Override
+        public void handle(CasOperation operation, Message message) {
+            handleOperation(operation, message);
+        }
+    };
+
     protected final ClassMatchedHandler<GetOperation, Message> getOperationMessageClassMatchedHandler = new ClassMatchedHandler<GetOperation, Message>() {
         @Override
         public void handle(GetOperation operation, Message message) {
@@ -223,6 +230,12 @@ public class BootstrapServer extends ComponentDefinition {
     protected final ClassMatchedHandler<GetResponse, Message> getResponseMessageClassMatchedHandler = new ClassMatchedHandler<GetResponse, Message>() {
         @Override
         public void handle(GetResponse opResponse, Message message) {
+            handleOperationResponse(opResponse, message);
+        }
+    };
+    protected final ClassMatchedHandler<CasResponse, Message> casResponseMessageClassMatchedHandler = new ClassMatchedHandler<CasResponse, Message>() {
+        @Override
+        public void handle(CasResponse opResponse, Message message) {
             handleOperationResponse(opResponse, message);
         }
     };
@@ -298,8 +311,10 @@ public class BootstrapServer extends ComponentDefinition {
         subscribe(readyHandler, net);
         subscribe(operationMessageClassMatchedHandler, net);
         subscribe(getOperationMessageClassMatchedHandler, net);
+        subscribe(casOperationMessageClassMatchedHandler, net);
         subscribe(opResponseMessageClassMatchedHandler, net);
         subscribe(getResponseMessageClassMatchedHandler, net);
+        subscribe(casResponseMessageClassMatchedHandler, net);
         subscribe(suspectHandler, epfd);
         subscribe(restoreHandler, epfd);
         subscribe(decideHandler, paxos);

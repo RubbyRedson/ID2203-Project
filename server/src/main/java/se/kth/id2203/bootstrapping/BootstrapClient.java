@@ -164,12 +164,22 @@ public class BootstrapClient extends ComponentDefinition {
             if(e.operation instanceof PutOperation){
                 System.out.println("DECIDE " + e + " received at " + self);
                 save(e.operation.key, ((PutOperation) e.operation).value);
-                trigger(new Message(self, server, (OpResponse)(new PutResponse(e.operation.id, OpResponse.Code.OK))), net);
+                trigger(new Message(self, server, new PutResponse(e.operation.id, OpResponse.Code.OK)), net);
             }else if(e.operation instanceof GetOperation){
                 if (localStore.containsKey(e.operation.key)) {
-                    trigger(new Message(self, server, (OpResponse)(new GetResponse(e.operation.id, OpResponse.Code.OK, localStore.get(e.operation.key)))), net);
+                    trigger(new Message(self, server, new GetResponse(e.operation.id, OpResponse.Code.OK, localStore.get(e.operation.key))), net);
                 } else {
-                    trigger(new Message(self, server, (OpResponse)(new GetResponse(e.operation.id, OpResponse.Code.NOT_FOUND, null))), net);
+                    trigger(new Message(self, server, new GetResponse(e.operation.id, OpResponse.Code.NOT_FOUND, null)), net);
+                }
+            } else if (e.operation instanceof CasOperation) {
+                String storedValue = localStore.get(e.operation.key);
+                if ((storedValue == null && ((CasOperation) e.operation).reference == null) || (storedValue != null &&
+                storedValue.equals(((CasOperation) e.operation).reference))) {
+                    localStore.put(e.operation.key, ((CasOperation) e.operation).newValue);
+                    trigger(new Message(self, server, new CasResponse(e.operation.id, OpResponse.Code.OK)), net);
+                } else {
+                    trigger(new Message(self, server, new CasResponse(e.operation.id,
+                            OpResponse.Code.WRONG_REFERENCE)), net);
                 }
             }
         }

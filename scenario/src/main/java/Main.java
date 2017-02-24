@@ -24,5 +24,6 @@ public class Main {
         //SimulationScenario crashAndRestart = CrashAndRestart.simpleSetup();
         //crashAndRestart.simulate(LauncherComp.class);
 
+        //CAS test
     }
 }

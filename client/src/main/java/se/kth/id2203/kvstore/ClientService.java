@@ -135,7 +135,14 @@ public class ClientService extends ComponentDefinition {
             handleOperationResponse(content);
         }
     };
-    
+
+    protected final ClassMatchedHandler<CasResponse, Message> casResponseMessageClassMatchedHandler = new ClassMatchedHandler<CasResponse, Message>() {
+        @Override
+        public void handle(CasResponse content, Message context) {
+            handleOperationResponse(content);
+        }
+    };
+
     {
         subscribe(startHandler, control);
         subscribe(timeoutHandler, timer);
@@ -143,6 +150,7 @@ public class ClientService extends ComponentDefinition {
         subscribe(opHandler, loopback);
         subscribe(putResponseMessageClassMatchedHandler, net);
         subscribe(getResponseMessageClassMatchedHandler, net);
+        subscribe(casResponseMessageClassMatchedHandler, net);
     }
     
     Future<OpResponse> op(String key) {
