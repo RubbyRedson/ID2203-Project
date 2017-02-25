@@ -269,6 +269,16 @@ public class BootstrapServer extends ComponentDefinition {
         @Override
         public void handle(Suspect e) {
             System.out.println("SUSPECTED " + e.p);
+            int partitionKey = getPartitionKey(e.p);
+            partitions.get(partitionKey).remove(e.p);
+
+            Set<NetAddress> newPartition = partitions.get(partitionKey);
+
+            trigger(new Propose(new StopSignOperation(newPartition, -1), partitionKey), paxos);
+
+
+
+            /*
 
             //Grap a random node in the partition
             NetAddress randomNode = null;
@@ -290,6 +300,7 @@ public class BootstrapServer extends ComponentDefinition {
 
             trigger(new Message(self, randomNode, new TopologyResponse(newPartition, getPartitionKey(e.p))), net);
             trigger(new Propose(new StopSignOperation(newPartition, 0), getPartitionKey(e.p)), paxos);
+            */
         }
     };
 
