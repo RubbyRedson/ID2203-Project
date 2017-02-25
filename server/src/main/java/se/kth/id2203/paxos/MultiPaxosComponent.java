@@ -310,6 +310,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
                         cfg = av.size();
                         topology = copySet(((StopSignOperation) av.get(al)).topology);
                         pts = 0;
+                        prepts = 0;
 
                         for (NetAddress adr : topology) {
                             trigger(new PL_Send(self, adr, new CatchupDecide(pts, cfg, av, partitionId)), fpl);
@@ -335,6 +336,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
                         cfg = av.size();
                         topology = copySet(((StopSignOperation) av.get(al)).topology);
                         pts = 0;
+                        prepts = 0;
                     }
                 }
                 trigger(new FinalDecide(av.get(al)), asc);
