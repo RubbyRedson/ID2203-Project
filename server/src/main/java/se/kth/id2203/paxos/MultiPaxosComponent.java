@@ -42,8 +42,8 @@ public class MultiPaxosComponent extends ComponentDefinition {
     private List<Operation> pv;
     private List<Operation> proposedValues;
 
-    private boolean updateTopology = false;
-    private Set<NetAddress> newTopology = new HashSet<>();
+//    private boolean updateTopology = false;
+//    private Set<NetAddress> newTopology = new HashSet<>();
 
     private Map<NetAddress, ReadlistItem> readlist;
 
@@ -123,9 +123,13 @@ public class MultiPaxosComponent extends ComponentDefinition {
 
             if (pts == 0) {
 
-                if (updateTopology) {
-                    topology = newTopology;
-                    updateTopology = false;
+//                if (updateTopology) {
+//                    topology = newTopology;
+//                    updateTopology = false;
+//                }
+
+                if (topology.size() == 0 && propose.value instanceof StopSignOperation) {
+                    topology = copySet(((StopSignOperation) propose.value).topology);
                 }
 
                 pts = t * getN() + rank((self));
@@ -213,7 +217,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
                 }
 
                 for (Operation v : proposedValues) {
-                    if (!pv.contains(v) && !(cfg < pv.size() && pv.get(pv.size() - 1).getClass() == StopSignOperation.class)) { //TODO add check that not ( cfg < pv.size() ?? && that last command in proposed values is SS )
+                    if (!pv.contains(v) && !(cfg < pv.size() && pv.get(pv.size() - 1) instanceof StopSignOperation)) { //TODO add check that not ( cfg < pv.size() ?? && that last command in proposed values is SS )
                         pv.add(v);
                     }
                 }
@@ -232,6 +236,13 @@ public class MultiPaxosComponent extends ComponentDefinition {
                 }
             }
         }
+    }
+
+    private Set<NetAddress> copySet(Set<NetAddress> toCopy) {
+        Set<NetAddress> result = new HashSet<>();
+        for (NetAddress address : toCopy)
+            result.add(address);
+        return result;
     }
 
 
@@ -285,9 +296,9 @@ public class MultiPaxosComponent extends ComponentDefinition {
             while (al < decide.pl) {
 
                 if(al == decide.pl -1){
-                    if(av.get(al).getClass() == StopSignOperation.class){
+                    if(av.get(al) instanceof StopSignOperation){
                         cfg = av.size();
-                        topology = ((StopSignOperation) av.get(al)).topology;
+                        topology = copySet(((StopSignOperation) av.get(al)).topology);
                         pts = ats;
 
                         for(NetAddress adr : topology){
@@ -398,29 +409,29 @@ public class MultiPaxosComponent extends ComponentDefinition {
 
 
 
-    protected final ClassMatchedHandler<TopologyResponse, Message> topologyResponseMessageClassMatchedHandler = new ClassMatchedHandler<TopologyResponse, Message>() {
-        @Override
-        public void handle(TopologyResponse topologyResponse, Message message) {
-
-            if (topologyResponse.partitionId != -1 && partitionId == -1) {
-                partitionId = topologyResponse.partitionId;
-            }
-
-            if (partitionId == topologyResponse.partitionId) {
-                newTopology = topologyResponse.topology;
-                updateTopology = true;
-
-                if(self.getPort() == 45678){
-                    trigger(new Propose(new StopSignOperation(newTopology, cfg), topologyResponse.partitionId), asc);
-                }
-
-                System.out.println("----- Topology received at MultiPaxos ---");
-                System.out.println(newTopology);
-                System.out.println("-----------------");
-            }
-
-        }
-    };
+//    protected final ClassMatchedHandler<TopologyResponse, Message> topologyResponseMessageClassMatchedHandler = new ClassMatchedHandler<TopologyResponse, Message>() {
+//        @Override
+//        public void handle(TopologyResponse topologyResponse, Message message) {
+//
+//            if (topologyResponse.partitionId != -1 && partitionId == -1) {
+//                partitionId = topologyResponse.partitionId;
+//            }
+//
+//            if (partitionId == topologyResponse.partitionId) {
+//                newTopology = topologyResponse.topology;
+//                updateTopology = true;
+//
+////                if(self.getPort() == 45678){
+////                    trigger(new Propose(new StopSignOperation(newTopology, cfg), topologyResponse.partitionId), asc);
+////                }
+//
+//                System.out.println("----- Topology received at MultiPaxos ---");
+//                System.out.println(newTopology);
+//                System.out.println("-----------------");
+//            }
+//
+//        }
+//    };
 
     protected final Handler<Propose> proposeHandler = new Handler<Propose>() {
         @Override
@@ -442,7 +453,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
         subscribe(nackHandler, fpl);
         subscribe(prepareHandler, fpl);
         subscribe(startHander, control);
-        subscribe(topologyResponseMessageClassMatchedHandler, net);
+//        subscribe(topologyResponseMessageClassMatchedHandler, net);
         subscribe(proposeHandler, asc);
     }
 }

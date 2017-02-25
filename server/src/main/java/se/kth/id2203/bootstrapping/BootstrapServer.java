@@ -153,6 +153,9 @@ public class BootstrapServer extends ComponentDefinition {
 
             trigger(new Message(self, self, new TopologyResponse(p, partitionKey)), net);
 
+            System.out.println("Sending SSO");
+            trigger(new Propose(new StopSignOperation(p, -1), partitionKey), paxos);
+
             if (holdbackQueue.size() > 0 && active.size() > 7) {
                 System.out.println("Empty holdbackqueue " + holdbackQueue);
                 Iterator iterator = holdbackQueue.iterator();
