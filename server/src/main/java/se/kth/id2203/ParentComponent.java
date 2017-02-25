@@ -1,27 +1,19 @@
 package se.kth.id2203;
 
 import com.google.common.base.Optional;
-import se.kth.id2203.bootstrapping.BootstrapClient;
-import se.kth.id2203.bootstrapping.BootstrapServer;
-import se.kth.id2203.bootstrapping.Bootstrapping;
+import se.kth.id2203.nodes.Slave;
+import se.kth.id2203.nodes.Master;
 import se.kth.id2203.broadcast.beb.BasicBroadcast;
 import se.kth.id2203.broadcast.beb.BestEffortBroadcast;
 import se.kth.id2203.broadcast.epfd.EpfdComponent;
 import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
 import se.kth.id2203.broadcast.perfect_link.PerfectLink;
 import se.kth.id2203.broadcast.perfect_link.PerfectLinkComponent;
-import se.kth.id2203.kvstore.KVService;
 import se.kth.id2203.networking.NetAddress;
-import se.kth.id2203.overlay.Routing;
-import se.kth.id2203.overlay.VSOverlayManager;
 import se.kth.id2203.paxos.MultiPaxos;
 import se.kth.id2203.paxos.MultiPaxosComponent;
 import se.kth.id2203.paxos.PaxosInit;
-import se.sics.kompics.Channel;
-import se.sics.kompics.Component;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Init;
-import se.sics.kompics.Positive;
+import se.sics.kompics.*;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.timer.Timer;
 
@@ -43,7 +35,7 @@ public class ParentComponent
 
         Optional<NetAddress> serverO = config().readValue("id2203.project.bootstrap-address", NetAddress.class);
         if (serverO.isPresent()) { // start in client mode
-            boot = create(BootstrapClient.class, Init.NONE);
+            boot = create(Slave.class, Init.NONE);
             connect(basicBroadcast.getPositive(BestEffortBroadcast.class), boot.getNegative(BestEffortBroadcast.class)
                     , Channel.TWO_WAY);
             Component paxos = create(MultiPaxosComponent.class, Init.NONE);
@@ -52,9 +44,9 @@ public class ParentComponent
                     boot.getNegative(MultiPaxos.class), Channel.TWO_WAY);
             connect(net, paxos.getNegative(Network.class), Channel.TWO_WAY);
         } else { // start in server mode
-            boot = create(BootstrapServer.class, Init.NONE);
+            boot = create(Master.class, Init.NONE);
             // Paxos
-            for (int i = 0; i < BootstrapServer.PARTITION_COUNT; i++) {
+            for (int i = 0; i < Master.PARTITION_COUNT; i++) {
                 Component paxos = create(MultiPaxosComponent.class, new PaxosInit(i));
                 connect(pLink.getPositive(PerfectLink.class), paxos.getNegative(PerfectLink.class), Channel.TWO_WAY);
                 connect(paxos.getPositive(MultiPaxos.class),

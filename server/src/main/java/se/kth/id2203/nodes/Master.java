@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package se.kth.id2203.bootstrapping;
+package se.kth.id2203.nodes;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -29,12 +29,12 @@ import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.kth.id2203.bootstrapping.*;
 import se.kth.id2203.broadcast.beb.BestEffortBroadcast;
 import se.kth.id2203.broadcast.beb.TopologyResponse;
 import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
 import se.kth.id2203.broadcast.epfd.Restore;
 import se.kth.id2203.broadcast.epfd.Suspect;
-import se.kth.id2203.broadcast.perfect_link.PL_Send;
 import se.kth.id2203.kvstore.*;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
@@ -45,9 +45,9 @@ import se.sics.kompics.timer.CancelPeriodicTimeout;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.Timer;
 
-public class BootstrapServer extends ComponentDefinition {
+public class Master extends ComponentDefinition {
 
-    final static Logger LOG = LoggerFactory.getLogger(BootstrapServer.class);
+    final static Logger LOG = LoggerFactory.getLogger(Master.class);
     //******* Ports ******
     protected final Negative<Bootstrapping> boot = provides(Bootstrapping.class);
     protected final Positive<Network> net = requires(Network.class);

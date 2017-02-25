@@ -23,13 +23,10 @@
  */
 package se.kth.id2203.kvstore;
 
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.SettableFuture;
 import org.slf4j.LoggerFactory;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
-import se.kth.id2203.overlay.Connect;
-import se.kth.id2203.overlay.RouteMsg;
 import se.sics.kompics.*;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.timer.ScheduleTimeout;
@@ -54,7 +51,6 @@ public class ClientService extends ComponentDefinition {
     //******* Fields ******
     protected final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     protected final NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
-    private Optional<Connect.Ack> connected = Optional.absent();
     private final Map<UUID, SettableFuture<OpResponse>> pending = new TreeMap<>();
 
 
@@ -72,48 +68,13 @@ public class ClientService extends ComponentDefinition {
             long timeout = (config().getValue("id2203.project.keepAlivePeriod", Long.class) * 2);
             ScheduleTimeout st = new ScheduleTimeout(timeout);
             st.setTimeoutEvent(new ConnectTimeout(st));
-            trigger(new Message(self, server, new Connect(st.getTimeoutEvent().getTimeoutId())), net);
+
 
             doStartupStuff();
             trigger(st, timer);
         }
     };
-    protected final ClassMatchedHandler<Connect.Ack, Message> connectHandler = new ClassMatchedHandler<Connect.Ack, Message>() {
-        
-        @Override
-        public void handle(Connect.Ack content, Message context) {
-            LOG.info("Client connected to {}, cluster size is {}", server, content.clusterSize);
-            connected = Optional.of(content);
-            Console c = new Console(ClientService.this);
-            Thread tc = new Thread(c);
-            tc.start();
-        }
-    };
-    protected final Handler<ConnectTimeout> timeoutHandler = new Handler<ConnectTimeout>() {
-        
-        @Override
-        public void handle(ConnectTimeout event) {
-            if (!connected.isPresent()) {
-                LOG.error("Connection to server {} did not succeed. Shutting down...", server);
-                Kompics.asyncShutdown();
-            } else {
-                Connect.Ack cack = connected.get();
-                if (!cack.id.equals(event.getTimeoutId())) {
-                    LOG.error("Received wrong response id earlier! System may be inconsistent. Shutting down...", server);
-                    System.exit(1);
-                }
-            }
-        }
-    };
-    protected final Handler<OpWithFuture> opHandler = new Handler<OpWithFuture>() {
-        
-        @Override
-        public void handle(OpWithFuture event) {
-            RouteMsg rm = new RouteMsg(event.op.key, event.op); // don't know which partition is responsible, so ask the bootstrap server to forward it
-            trigger(new Message(self, server, rm), net);
-            pending.put(event.op.id, event.f);
-        }
-    };
+
 
     private void handleOperationResponse(OpResponse opResponse) {
         LOG.debug("Got OpResponse: {}", opResponse);
@@ -150,9 +111,6 @@ public class ClientService extends ComponentDefinition {
 
     {
         subscribe(startHandler, control);
-        subscribe(timeoutHandler, timer);
-        subscribe(connectHandler, net);
-        subscribe(opHandler, loopback);
         subscribe(putResponseMessageClassMatchedHandler, net);
         subscribe(getResponseMessageClassMatchedHandler, net);
         subscribe(casResponseMessageClassMatchedHandler, net);

@@ -21,19 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package se.kth.id2203.bootstrapping;
+package se.kth.id2203.nodes;
 
-import java.awt.print.Book;
 import java.util.*;
 
 import org.slf4j.LoggerFactory;
+import se.kth.id2203.bootstrapping.*;
 import se.kth.id2203.broadcast.beb.*;
 import se.kth.id2203.broadcast.epfd.EventuallyPerfectFailureDetector;
 import se.kth.id2203.kvstore.*;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.paxos.Abort;
-import se.kth.id2203.paxos.Decide;
 import se.kth.id2203.paxos.FinalDecide;
 import se.kth.id2203.paxos.MultiPaxos;
 import se.sics.kompics.ClassMatchedHandler;
@@ -51,14 +50,14 @@ import se.sics.kompics.timer.Timer;
  *
  * @author Lars Kroll <lkroll@kth.se>
  */
-public class BootstrapClient extends ComponentDefinition {
+public class Slave extends ComponentDefinition {
 
     public static enum State {
 
         WAITING, STARTED;
     }
 
-    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(BootstrapClient.class);
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(Slave.class);
     //******* Ports ******
     final Negative<Bootstrapping> bootstrap = provides(Bootstrapping.class);
     final Positive<Timer> timer = requires(Timer.class);
