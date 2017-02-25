@@ -148,13 +148,16 @@ public class BootstrapServer extends ComponentDefinition {
             Set<NetAddress> p = partitions.get(partitionKey);
 
             for (NetAddress adr : p){
-                trigger(new Message(self, adr, new TopologyResponse(p, partitionKey)), net);
+                trigger(new Message(self, adr, new TopologyResponse(copySet(p), partitionKey)), net);
             }
 
-            trigger(new Message(self, self, new TopologyResponse(p, partitionKey)), net);
+            trigger(new Message(self, self, new TopologyResponse(copySet(p), partitionKey)), net);
+
+            Set<NetAddress> pForPaxos = copySet(p);
+            pForPaxos.add(self);
 
             System.out.println("Sending SSO");
-            trigger(new Propose(new StopSignOperation(p, -1), partitionKey), paxos);
+            trigger(new Propose(new StopSignOperation(copySet(pForPaxos), -1), partitionKey), paxos);
 
             if (holdbackQueue.size() > 0 && active.size() > 7) {
                 System.out.println("Empty holdbackqueue " + holdbackQueue);
@@ -275,37 +278,21 @@ public class BootstrapServer extends ComponentDefinition {
             int partitionKey = getPartitionKey(e.p);
             partitions.get(partitionKey).remove(e.p);
 
-            Set<NetAddress> newPartition = partitions.get(partitionKey);
+            Set<NetAddress> pForPaxos = copySet(partitions.get(partitionKey));
+            pForPaxos.add(self);
 
-            trigger(new Propose(new StopSignOperation(newPartition, -1), partitionKey), paxos);
+            trigger(new Propose(new StopSignOperation(copySet(pForPaxos), -1), partitionKey), paxos);
 
 
-
-            /*
-
-            //Grap a random node in the partition
-            NetAddress randomNode = null;
-            Set<NetAddress> p = partitions.get(getPartitionKey(e.p));
-            for (NetAddress adr : p) {
-                if (!e.p.equals(adr)) {
-                    randomNode = adr;
-                    break;
-                }
-            }
-
-            if(randomNode == null){
-                System.out.println("PARTITION IS DEAD");
-            }
-
-            partitions.get(getPartitionKey(e.p)).remove(e.p);
-
-            Set<NetAddress> newPartition = partitions.get(getPartitionKey(e.p));
-
-            trigger(new Message(self, randomNode, new TopologyResponse(newPartition, getPartitionKey(e.p))), net);
-            trigger(new Propose(new StopSignOperation(newPartition, 0), getPartitionKey(e.p)), paxos);
-            */
         }
     };
+
+    private Set<NetAddress> copySet(Set<NetAddress> toCopy) {
+        Set<NetAddress> result = new HashSet<>();
+        for (NetAddress address : toCopy)
+            result.add(address);
+        return result;
+    }
 
     protected final Handler<Restore> restoreHandler = new Handler<Restore>() {
         @Override
@@ -326,32 +313,8 @@ public class BootstrapServer extends ComponentDefinition {
             System.out.println("ABORT " + e+ " received at " + self);
         }
     };
-    /*
-    protected final ClassMatchedHandler<TopologyQuery, Message> topologyQueryMessageClassMatchedHandler = new ClassMatchedHandler<TopologyQuery, Message>() {
-        @Override
-        public void handle(TopologyQuery topologyQuery, Message message) {
-
-            System.out.println("Received topology query from " + message.getSource());
-            Set<NetAddress> result = new HashSet<>();
-            for (NetAddress adr : active) {
-                if(adr.getPort() != self.getPort()){
-                    result.add(adr);
-                }
-            }
-
-            System.out.println(".------");
-            System.out.println(result);
-            System.out.println(self);
-            System.out.println("........");
-
-            trigger(new Message(self, message.getSource(), new TopologyResponse(result, 123)), net);
-
-        }
-    };
-    */
 
     {
-        //subscribe(topologyQueryMessageClassMatchedHandler, net);
         subscribe(startHandler, control);
         subscribe(timeoutHandler, timer);
         subscribe(assignmentHandler, boot);

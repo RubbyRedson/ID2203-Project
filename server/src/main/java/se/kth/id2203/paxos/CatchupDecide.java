@@ -26,7 +26,10 @@ public class CatchupDecide implements KompicsEvent, Serializable {
     @Override
     public String toString() {
         return "CatchupDecide{" +
-                "vd=" + vd +
+                "ts=" + ts +
+                ", cfg=" + cfg +
+                ", vd=" + vd +
+                ", partitionId=" + partitionId +
                 '}';
     }
 }

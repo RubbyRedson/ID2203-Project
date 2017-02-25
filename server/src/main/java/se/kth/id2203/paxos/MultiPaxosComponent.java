@@ -40,8 +40,8 @@ public class MultiPaxosComponent extends ComponentDefinition {
     private List<Operation> pv;
     private List<Operation> proposedValues;
 
-//    private boolean updateTopology = false;
-//    private Set<NetAddress> newTopology = new HashSet<>();
+    private boolean updateTopology = false;
+    private Set<NetAddress> newTopology = new HashSet<>();
 
     private Map<NetAddress, ReadlistItem> readlist;
 
@@ -89,11 +89,21 @@ public class MultiPaxosComponent extends ComponentDefinition {
     }
 
     private List<Operation> prefix(List<Operation> whole, int length) {
-        return whole.subList(0, length);
+        List<Operation> result = new ArrayList<>();
+        for (Operation op : whole.subList(0, length)) {
+            result.add(op);
+        }
+        return result;
     }
 
     private List<Operation> suffix(List<Operation> whole, int length) {
-        return whole.subList(length, whole.size());
+        List<Operation> result = new ArrayList<>();
+
+        for (Operation op : whole.subList(length, whole.size())) {
+            result.add(op);
+        }
+
+        return result;
     }
 
     private int getMinorityCount() {
@@ -162,7 +172,9 @@ public class MultiPaxosComponent extends ComponentDefinition {
 
 
     private void prepare(Prepare prepare, NetAddress q) {
-        partitionId = prepare.partitionId;
+        if (partitionId == -1) {
+            partitionId = prepare.partitionId;
+        }
         t = Math.max(t, prepare.t) + 1;
 
         if (prepare.cfg > cfg) {
@@ -297,7 +309,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
                     if (av.get(al) instanceof StopSignOperation) {
                         cfg = av.size();
                         topology = copySet(((StopSignOperation) av.get(al)).topology);
-                        pts = ats;
+                        pts = 0;
 
                         for (NetAddress adr : topology) {
                             trigger(new PL_Send(self, adr, new CatchupDecide(pts, cfg, av, partitionId)), fpl);
@@ -322,7 +334,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
                     if (av.get(al) instanceof StopSignOperation) {
                         cfg = av.size();
                         topology = copySet(((StopSignOperation) av.get(al)).topology);
-                        pts = ats;
+                        pts = 0;
                     }
                 }
                 trigger(new FinalDecide(av.get(al)), asc);
@@ -342,7 +354,10 @@ public class MultiPaxosComponent extends ComponentDefinition {
     protected final ClassMatchedHandler<CatchupDecide, PL_Deliver> cathupHandler = new ClassMatchedHandler<CatchupDecide, PL_Deliver>() {
         @Override
         public void handle(CatchupDecide catchupDecide, PL_Deliver pl_deliver) {
-            if (partitionId == catchupDecide.partitionId) {
+            if (partitionId == catchupDecide.partitionId || partitionId == -1) {
+                if (partitionId == -1) {
+                    partitionId = catchupDecide.partitionId;
+                }
                 catchupDecide(catchupDecide);
             }
         }
@@ -420,7 +435,9 @@ public class MultiPaxosComponent extends ComponentDefinition {
         @Override
         public void handle(Prepare prepare, PL_Deliver pl_deliver) {
             System.out.println("PAXOS, prepareHandler  SEFL: " + self + ", SENDER: " + pl_deliver.src);
-            prepare(prepare, pl_deliver.src);
+            if (partitionId == prepare.partitionId || partitionId == -1) {
+                prepare(prepare, pl_deliver.src);
+            }
 
         }
     };
