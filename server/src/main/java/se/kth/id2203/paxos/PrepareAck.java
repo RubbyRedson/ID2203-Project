@@ -13,14 +13,16 @@ public class PrepareAck implements KompicsEvent, Serializable{
 
     public final int ts, ats, al, t;
     public final List<Operation> vsuf;
+    public final int partitionId;
 
 
-    public PrepareAck(int ts, int ats, int al, int t, List<Operation> vsuf) {
+    public PrepareAck(int ts, int ats, int al, int t, List<Operation> vsuf, int partitionId) {
         this.ts = ts;
         this.ats = ats;
         this.al = al;
         this.t = t;
         this.vsuf = vsuf;
+        this.partitionId = partitionId;
     }
 
 

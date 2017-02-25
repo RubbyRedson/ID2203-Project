@@ -161,9 +161,8 @@ public class BootstrapClient extends ComponentDefinition {
     protected final Handler<FinalDecide> decideHandler = new Handler<FinalDecide>() {
         @Override
         public void handle(FinalDecide e) {
-
+            System.out.println("DECIDE " + e + " received at " + self);
             if(e.operation instanceof PutOperation){
-                System.out.println("DECIDE " + e + " received at " + self);
                 save(e.operation.key, ((PutOperation) e.operation).value);
                 trigger(new Message(self, server, new PutResponse(e.operation.id, OpResponse.Code.OK)), net);
             }else if(e.operation instanceof GetOperation){
@@ -182,6 +181,8 @@ public class BootstrapClient extends ComponentDefinition {
                     trigger(new Message(self, server, new CasResponse(e.operation.id,
                             OpResponse.Code.WRONG_REFERENCE)), net);
                 }
+            } else if (e.operation instanceof StopSignOperation) {
+                //TODO handle?
             }
         }
     };

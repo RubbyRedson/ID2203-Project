@@ -14,11 +14,13 @@ public class CatchupDecide implements KompicsEvent, Serializable {
     public final int ts;
     public final int cfg;
     public final List<Operation> vd;
+    public final int partitionId;
 
-    public CatchupDecide(int ts, int cfg, List<Operation> vd) {
+    public CatchupDecide(int ts, int cfg, List<Operation> vd, int partitionId) {
         this.ts = ts;
         this.cfg = cfg;
         this.vd = vd;
+        this.partitionId = partitionId;
     }
 
     @Override

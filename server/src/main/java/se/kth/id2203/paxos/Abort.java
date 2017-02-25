@@ -9,9 +9,11 @@ import java.io.Serializable;
  */
 public class Abort implements KompicsEvent, Serializable {
     public final String value;
+    public final int partitionId;
 
-    public Abort(String value) {
+    public Abort(String value, int partitionId) {
         this.value = value;
+        this.partitionId = partitionId;
     }
 
     @Override

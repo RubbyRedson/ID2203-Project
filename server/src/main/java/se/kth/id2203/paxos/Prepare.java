@@ -12,13 +12,15 @@ public class Prepare implements KompicsEvent, Serializable {
     public final int pts;
     public final int al;
     public final int t;
+    public final int partitionId;
 
 
-    public Prepare(int cfg, int pts, int al, int t) {
+    public Prepare(int cfg, int pts, int al, int t, int partitionId) {
         this.cfg = cfg;
         this.pts = pts;
         this.al = al;
         this.t = t;
+        this.partitionId = partitionId;
     }
 
     @Override

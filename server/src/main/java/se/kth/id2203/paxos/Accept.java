@@ -15,13 +15,15 @@ public class Accept implements KompicsEvent, Serializable{
     public final List<Operation> vsuff;
     public final int offs;
     public final int t;
+    public final int partitionId;
 
 
-    public Accept(int pts, List<Operation> vsuff, int offs, int t) {
+    public Accept(int pts, List<Operation> vsuff, int offs, int t, int partitionId) {
         this.pts = pts;
         this.vsuff = vsuff;
         this.offs = offs;
         this.t = t;
+        this.partitionId = partitionId;
     }
 
     @Override

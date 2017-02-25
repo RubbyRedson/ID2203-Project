@@ -10,11 +10,13 @@ import java.io.Serializable;
 public class Nack implements KompicsEvent, Serializable {
 
     public final int ts, t;
+    public final int partitionId;
 
 
-    public Nack(int ts, int t) {
+    public Nack(int ts, int t, int partitionId) {
         this.ts = ts;
         this.t = t;
+        this.partitionId = partitionId;
     }
 
     @Override

@@ -2,13 +2,11 @@ package se.kth.id2203.paxos;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.kth.id2203.broadcast.beb.TopologyResponse;
 import se.kth.id2203.broadcast.perfect_link.PL_Deliver;
 import se.kth.id2203.broadcast.perfect_link.PL_Send;
 import se.kth.id2203.broadcast.perfect_link.PerfectLink;
 import se.kth.id2203.kvstore.Operation;
 import se.kth.id2203.kvstore.StopSignOperation;
-import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.*;
 import se.sics.kompics.network.Network;
@@ -103,12 +101,12 @@ public class MultiPaxosComponent extends ComponentDefinition {
     }
 
 
-    private List<Operation> getCatchupList(int localCfg){
+    private List<Operation> getCatchupList(int localCfg) {
         int counter = 0;
-        for(Operation a : av){
-            if(a.getClass() == StopSignOperation.class){
-                StopSignOperation ss = (StopSignOperation)a;
-                if(ss.cfg == localCfg){
+        for (Operation a : av) {
+            if (a.getClass() == StopSignOperation.class) {
+                StopSignOperation ss = (StopSignOperation) a;
+                if (ss.cfg == localCfg) {
                     return suffix(av, counter);
                 }
             }
@@ -118,67 +116,67 @@ public class MultiPaxosComponent extends ComponentDefinition {
     }
 
     private void propose(Propose propose) {
-        if (propose.partitionId == partitionId) {
-            t++;
+        t++;
 
-            if (pts == 0) {
+        if (pts == 0) {
 
 //                if (updateTopology) {
 //                    topology = newTopology;
 //                    updateTopology = false;
 //                }
 
-                if (topology.size() == 0 && propose.value instanceof StopSignOperation) {
-                    topology = copySet(((StopSignOperation) propose.value).topology);
+            if (topology.size() == 0 && propose.value instanceof StopSignOperation) {
+                topology = copySet(((StopSignOperation) propose.value).topology);
+            }
+
+            pts = t * getN() + rank((self));
+            pv = prefix(av, al);
+            pl = 0;
+            proposedValues = new ArrayList<>();
+            proposedValues.add(propose.value);
+
+            readlist = new HashMap<>();
+            accepted = new HashMap<>();
+            decided = new HashMap<>();
+
+            for (NetAddress p : topology) {
+                trigger(new PL_Send(self, p, new Prepare(cfg, pts, al, t, partitionId)), fpl);
+            }
+
+        } else if (readlist.size() <= getMinorityCount()) {
+            proposedValues.add(propose.value);
+        } else if (!pv.contains(propose.value)) {
+            pv.add(propose.value);
+
+            for (NetAddress p : topology) {
+                if (readlist.containsKey(p)) {
+                    List<Operation> opts = new ArrayList<>();
+                    opts.add(propose.value);
+                    trigger(new PL_Send(self, p, new Accept(pts, opts, pv.size() - 1, t, partitionId)), fpl);
                 }
 
-                pts = t * getN() + rank((self));
-                pv = prefix(av, al);
-                pl = 0;
-                proposedValues = new ArrayList<>();
-                proposedValues.add(propose.value);
-
-                readlist = new HashMap<>();
-                accepted = new HashMap<>();
-                decided = new HashMap<>();
-
-                for (NetAddress p : topology) {
-                    trigger(new PL_Send(self, p, new Prepare(cfg, pts, al, t)), fpl);
-                }
-
-            } else if (readlist.size() <= getMinorityCount()) {
-                proposedValues.add(propose.value);
-            } else if (!pv.contains(propose.value)) {
-                pv.add(propose.value);
-
-                for (NetAddress p : topology) {
-                    if (readlist.containsKey(p)) {
-                        List<Operation> opts = new ArrayList<>();
-                        opts.add(propose.value);
-                        trigger(new PL_Send(self, p, new Accept(pts, opts, pv.size() - 1, t)), fpl);
-                    }
-
-                }
             }
         }
+
     }
 
 
     private void prepare(Prepare prepare, NetAddress q) {
+        partitionId = prepare.partitionId;
         t = Math.max(t, prepare.t) + 1;
 
         if (prepare.cfg > cfg) {
-            trigger(new PL_Send(self, q, new NackCfg(cfg, t)), fpl);
+            trigger(new PL_Send(self, q, new NackCfg(cfg, t, partitionId)), fpl);
         } else if (prepare.cfg < cfg) {
             List<Operation> vd = getCatchupList(prepare.cfg);
-            trigger(new PL_Send(self, q, new CatchupDecide(t, cfg, vd)), fpl);
+            trigger(new PL_Send(self, q, new CatchupDecide(t, cfg, vd, partitionId)), fpl);
 
-        }else{
+        } else {
             if (prepare.pts < prepts) {
-                trigger(new PL_Send(self, q, new Nack(prepare.pts, t)), fpl);
+                trigger(new PL_Send(self, q, new Nack(prepare.pts, t, partitionId)), fpl);
             } else {
                 prepts = prepare.pts;
-                trigger(new PL_Send(self, q, new PrepareAck(prepare.pts, ats, al, t, suffix(av, prepare.al))), fpl); //called Promise in the lecture
+                trigger(new PL_Send(self, q, new PrepareAck(prepare.pts, ats, al, t, suffix(av, prepare.al), partitionId)), fpl); //called Promise in the lecture
             }
         }
 
@@ -189,7 +187,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
 
         if (nack.ts == pts) {
             pts = 0;
-            trigger(new Abort("whatever"), asc);
+            trigger(new Abort("whatever", partitionId), asc);
         }
     }
 
@@ -225,14 +223,14 @@ public class MultiPaxosComponent extends ComponentDefinition {
                 for (NetAddress p : topology) {
                     if (readlist.containsKey(p)) {
                         int _l = decided.get(p);
-                        trigger(new PL_Send(self, p, new Accept(pts, suffix(pv, _l), _l, t)), fpl);
+                        trigger(new PL_Send(self, p, new Accept(pts, suffix(pv, _l), _l, t, partitionId)), fpl);
                     }
                 }
 
             } else if (readlist.size() > getMinorityCount() + 1) {
-                trigger(new PL_Send(self, q, new Accept(pts, suffix(pv, prepareAck.al), prepareAck.al, t)), fpl);
+                trigger(new PL_Send(self, q, new Accept(pts, suffix(pv, prepareAck.al), prepareAck.al, t, partitionId)), fpl);
                 if (pl != 0) {
-                    trigger(new PL_Send(self, q, new Decide(pts, pl, t)), fpl);
+                    trigger(new PL_Send(self, q, new Decide(pts, pl, t, partitionId)), fpl);
                 }
             }
         }
@@ -249,7 +247,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
     private void accept(Accept accept, NetAddress q) {
         t = Math.max(t, accept.t) + 1;
         if (accept.pts != prepts) {
-            trigger(new PL_Send(self, q, new Nack(accept.pts, t)), fpl);
+            trigger(new PL_Send(self, q, new Nack(accept.pts, t, partitionId)), fpl);
         } else {
             ats = accept.pts;
             if (accept.offs < av.size()) {
@@ -257,7 +255,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
             }
 
             av.addAll(accept.vsuff);
-            trigger(new PL_Send(self, q, new AcceptAck(accept.pts, av.size(), t)), fpl);
+            trigger(new PL_Send(self, q, new AcceptAck(accept.pts, av.size(), t, partitionId)), fpl);
         }
     }
 
@@ -283,7 +281,7 @@ public class MultiPaxosComponent extends ComponentDefinition {
 
                 for (NetAddress p : topology) {
                     if (readlist.containsKey(p)) {
-                        trigger(new PL_Send(self, p, new Decide(pts, pl, t)), fpl);
+                        trigger(new PL_Send(self, p, new Decide(pts, pl, t, partitionId)), fpl);
                     }
                 }
             }
@@ -295,14 +293,14 @@ public class MultiPaxosComponent extends ComponentDefinition {
         if (decide.pts == prepts) {
             while (al < decide.pl) {
 
-                if(al == decide.pl -1){
-                    if(av.get(al) instanceof StopSignOperation){
+                if (al == decide.pl - 1) {
+                    if (av.get(al) instanceof StopSignOperation) {
                         cfg = av.size();
                         topology = copySet(((StopSignOperation) av.get(al)).topology);
                         pts = ats;
 
-                        for(NetAddress adr : topology){
-                            trigger(new PL_Send(self, adr, new CatchupDecide(0, cfg, av)), fpl);
+                        for (NetAddress adr : topology) {
+                            trigger(new PL_Send(self, adr, new CatchupDecide(pts, cfg, av, partitionId)), fpl);
                         }
                     }
                 }
@@ -315,13 +313,21 @@ public class MultiPaxosComponent extends ComponentDefinition {
 
 
     private void catchupDecide(CatchupDecide decide) {
-        t = decide.ts;
-        cfg = decide.cfg;
-        av.addAll(decide.vd);
+        if (cfg < decide.cfg) {
+            cfg = decide.cfg;
+            av.addAll(decide.vd);
 
-        while (al < decide.vd.size()) {
-            trigger(new FinalDecide(av.get(al)), asc);
-            al++;
+            while (al < decide.vd.size()) {
+                if (al == decide.vd.size() - 1) {
+                    if (av.get(al) instanceof StopSignOperation) {
+                        cfg = av.size();
+                        topology = copySet(((StopSignOperation) av.get(al)).topology);
+                        pts = ats;
+                    }
+                }
+                trigger(new FinalDecide(av.get(al)), asc);
+                al++;
+            }
         }
     }
 
@@ -330,20 +336,24 @@ public class MultiPaxosComponent extends ComponentDefinition {
         // after that resend the Prepare like we did in propose
 
         List<Operation> vd = getCatchupList(nackCfg.cfg);
-        trigger(new PL_Send(self, q, new CatchupDecide(t, cfg, vd)), fpl);
+        trigger(new PL_Send(self, q, new CatchupDecide(t, cfg, vd, partitionId)), fpl);
     }
 
     protected final ClassMatchedHandler<CatchupDecide, PL_Deliver> cathupHandler = new ClassMatchedHandler<CatchupDecide, PL_Deliver>() {
         @Override
         public void handle(CatchupDecide catchupDecide, PL_Deliver pl_deliver) {
-            catchupDecide(catchupDecide);
+            if (partitionId == catchupDecide.partitionId) {
+                catchupDecide(catchupDecide);
+            }
         }
     };
 
     protected final ClassMatchedHandler<NackCfg, PL_Deliver> nackCfgPLDeliverClassMatchedHandler = new ClassMatchedHandler<NackCfg, PL_Deliver>() {
         @Override
         public void handle(NackCfg nackCfg, PL_Deliver pl_deliver) {
-            nackCfg(nackCfg, pl_deliver.src);
+            if (partitionId == nackCfg.partitionId) {
+                nackCfg(nackCfg, pl_deliver.src);
+            }
         }
     };
 
@@ -359,7 +369,9 @@ public class MultiPaxosComponent extends ComponentDefinition {
         @Override
         public void handle(Decide decide, PL_Deliver pl_deliver) {
             System.out.println("PAXOS, decideHandler SEFL: " + self + ", SENDER: " + pl_deliver.src);
-            decide(decide);
+            if (partitionId == decide.partitionId) {
+                decide(decide);
+            }
         }
     };
 
@@ -367,9 +379,9 @@ public class MultiPaxosComponent extends ComponentDefinition {
         @Override
         public void handle(AcceptAck acceptAck, PL_Deliver pl_deliver) {
             System.out.println("PAXOS, acceptAck  SEFL: " + self + ", SENDER: " + pl_deliver.src);
-
-
-            acceptAck(acceptAck, pl_deliver.src);
+            if (partitionId == acceptAck.partitionId) {
+                acceptAck(acceptAck, pl_deliver.src);
+            }
         }
     };
 
@@ -378,7 +390,9 @@ public class MultiPaxosComponent extends ComponentDefinition {
         @Override
         public void handle(Accept accept, PL_Deliver pl_deliver) {
             System.out.println("PAXOS, acceptHander  SEFL: " + self + ", SENDER: " + pl_deliver.src);
-            accept(accept, pl_deliver.src);
+            if (partitionId == accept.partitionId) {
+                accept(accept, pl_deliver.src);
+            }
         }
     };
 
@@ -386,7 +400,9 @@ public class MultiPaxosComponent extends ComponentDefinition {
         @Override
         public void handle(PrepareAck prepareAck, PL_Deliver pl_deliver) {
             System.out.println("PAXOS, prepareACkHandler  SEFL: " + self + ", SENDER: " + pl_deliver.src);
-            prepareAck(prepareAck, pl_deliver.src);
+            if (partitionId == prepareAck.partitionId) {
+                prepareAck(prepareAck, pl_deliver.src);
+            }
         }
     };
 
@@ -394,7 +410,9 @@ public class MultiPaxosComponent extends ComponentDefinition {
         @Override
         public void handle(Nack nack, PL_Deliver pl_deliver) {
             System.out.println("PAXOS, nackHandler  SEFL: " + self + ", SENDER: " + pl_deliver.src);
-            nack(nack);
+            if (partitionId == nack.partitionId) {
+                nack(nack);
+            }
         }
     };
 
@@ -403,43 +421,18 @@ public class MultiPaxosComponent extends ComponentDefinition {
         public void handle(Prepare prepare, PL_Deliver pl_deliver) {
             System.out.println("PAXOS, prepareHandler  SEFL: " + self + ", SENDER: " + pl_deliver.src);
             prepare(prepare, pl_deliver.src);
+
         }
     };
-
-
-
-
-//    protected final ClassMatchedHandler<TopologyResponse, Message> topologyResponseMessageClassMatchedHandler = new ClassMatchedHandler<TopologyResponse, Message>() {
-//        @Override
-//        public void handle(TopologyResponse topologyResponse, Message message) {
-//
-//            if (topologyResponse.partitionId != -1 && partitionId == -1) {
-//                partitionId = topologyResponse.partitionId;
-//            }
-//
-//            if (partitionId == topologyResponse.partitionId) {
-//                newTopology = topologyResponse.topology;
-//                updateTopology = true;
-//
-////                if(self.getPort() == 45678){
-////                    trigger(new Propose(new StopSignOperation(newTopology, cfg), topologyResponse.partitionId), asc);
-////                }
-//
-//                System.out.println("----- Topology received at MultiPaxos ---");
-//                System.out.println(newTopology);
-//                System.out.println("-----------------");
-//            }
-//
-//        }
-//    };
 
     protected final Handler<Propose> proposeHandler = new Handler<Propose>() {
         @Override
         public void handle(Propose propose) {
-            //System.out.println("Multipaxos at " + self + " got " + propose);
+            System.out.println("PAXOS, propose  SEFL: " + self + " " + propose.toString());
 
-            propose(propose);
-            //trigger(new Decide("someval"), asc);
+            if (partitionId == propose.partitionId) {
+                propose(propose);
+            }
         }
     };
 

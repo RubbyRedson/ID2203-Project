@@ -10,12 +10,14 @@ import java.io.Serializable;
 public class AcceptAck implements KompicsEvent, Serializable {
 
     public final int pts, l, t;
+    public final int partitionId;
 
 
-    public AcceptAck(int pts, int l, int t) {
+    public AcceptAck(int pts, int l, int t, int partitionId) {
         this.pts = pts;
         this.l = l;
         this.t = t;
+        this.partitionId = partitionId;
     }
 
     @Override
