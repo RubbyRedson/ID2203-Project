@@ -175,10 +175,10 @@ public class Slave extends ComponentDefinition {
                 if ((storedValue == null && ((CasOperation) e.operation).reference == null) || (storedValue != null &&
                 storedValue.equals(((CasOperation) e.operation).reference))) {
                     localStore.put(e.operation.key, ((CasOperation) e.operation).newValue);
-                    trigger(new Message(self, server, new CasResponse(e.operation.id, OpResponse.Code.OK)), net);
+                    trigger(new Message(self, server, new CasResponse(e.operation.id, OpResponse.Code.OK, storedValue)), net);
                 } else {
                     trigger(new Message(self, server, new CasResponse(e.operation.id,
-                            OpResponse.Code.WRONG_REFERENCE)), net);
+                            OpResponse.Code.WRONG_REFERENCE, storedValue)), net);
                 }
             } else if (e.operation instanceof StopSignOperation) {
                 //TODO handle?
